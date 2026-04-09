@@ -1,0 +1,1495 @@
+{
+  "sets": [
+    {
+      "text": "500 Free 500 Free",
+      "type": "main",
+      "reps": 2,
+      "distance": 500,
+      "distance_unit": "m",
+      "total_distance": 1000,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://www.swimmingworldmagazine.com/news/six-swim-workout-sets-to-try-at-practice/",
+      "tags": []
+    },
+    {
+      "text": "400 IM 400 IM 400 IM 400 IM",
+      "type": "main",
+      "reps": 4,
+      "distance": 400,
+      "distance_unit": "m",
+      "total_distance": 1600,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Individual Medley"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "stamina"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.9
+      },
+      "intensity": null,
+      "source": "https://www.swimmingworldmagazine.com/news/six-swim-workout-sets-to-try-at-practice/",
+      "tags": []
+    },
+    {
+      "text": "300 Free 300 Free 300 Free",
+      "type": "main",
+      "reps": 3,
+      "distance": 300,
+      "distance_unit": "m",
+      "total_distance": 900,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://www.swimmingworldmagazine.com/news/six-swim-workout-sets-to-try-at-practice/",
+      "tags": []
+    },
+    {
+      "text": "200 IM 200 IM",
+      "type": "main",
+      "reps": 2,
+      "distance": 200,
+      "distance_unit": "m",
+      "total_distance": 400,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Individual Medley"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://www.swimmingworldmagazine.com/news/six-swim-workout-sets-to-try-at-practice/",
+      "tags": []
+    },
+    {
+      "text": "100 Free 100 Free",
+      "type": "main",
+      "reps": 2,
+      "distance": 100,
+      "distance_unit": "m",
+      "total_distance": 200,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://www.swimmingworldmagazine.com/news/six-swim-workout-sets-to-try-at-practice/",
+      "tags": []
+    },
+    {
+      "text": "The set begins at the bottom left of the M with the 100 free, and traces the shape of the M as it is written. The set should end with the second 100 free.",
+      "type": "main",
+      "reps": 2,
+      "distance": 100,
+      "distance_unit": "m",
+      "total_distance": 200,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://www.swimmingworldmagazine.com/news/six-swim-workout-sets-to-try-at-practice/",
+      "tags": []
+    },
+    {
+      "text": "- 4 x 50 meters with 30 seconds rest in between each repeat",
+      "type": "main",
+      "reps": 4,
+      "distance": 50,
+      "distance_unit": "m",
+      "total_distance": 200,
+      "time_target": null,
+      "rest": {
+        "raw": "30 seconds rest",
+        "type": "time",
+        "value": "30s"
+      },
+      "strokes": [],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://betterme.world/articles/beginner-swim-sets/",
+      "tags": []
+    },
+    {
+      "text": "- 8 x 25 meters with 15 seconds rest in between each repeat",
+      "type": "main",
+      "reps": 8,
+      "distance": 25,
+      "distance_unit": "m",
+      "total_distance": 200,
+      "time_target": null,
+      "rest": {
+        "raw": "15 seconds rest",
+        "type": "time",
+        "value": "15s"
+      },
+      "strokes": [],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://betterme.world/articles/beginner-swim-sets/",
+      "tags": []
+    },
+    {
+      "text": "- 200 meters easy swimming",
+      "type": "main",
+      "reps": null,
+      "distance": 200,
+      "distance_unit": "m",
+      "total_distance": 200,
+      "time_target": null,
+      "rest": null,
+      "strokes": [],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "easy",
+      "source": "https://betterme.world/articles/beginner-swim-sets/",
+      "tags": []
+    },
+    {
+      "text": "- 4 x 50 meters swimming at a moderate pace",
+      "type": "main",
+      "reps": 4,
+      "distance": 50,
+      "distance_unit": "m",
+      "total_distance": 200,
+      "time_target": null,
+      "rest": null,
+      "strokes": [],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "moderate",
+      "source": "https://betterme.world/articles/beginner-swim-sets/",
+      "tags": []
+    },
+    {
+      "text": "- 1 x 200 meters swimming at an easy pace",
+      "type": "main",
+      "reps": 1,
+      "distance": 200,
+      "distance_unit": "m",
+      "total_distance": 200,
+      "time_target": null,
+      "rest": null,
+      "strokes": [],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "easy",
+      "source": "https://betterme.world/articles/beginner-swim-sets/",
+      "tags": []
+    },
+    {
+      "text": "- Cool-down: 200 meters of easy swimming",
+      "type": "cooldown",
+      "reps": null,
+      "distance": 200,
+      "distance_unit": "m",
+      "total_distance": 200,
+      "time_target": null,
+      "rest": null,
+      "strokes": [],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "easy",
+      "source": "https://betterme.world/articles/beginner-swim-sets/",
+      "tags": []
+    },
+    {
+      "text": "- 5 x 50 easy swim freestyle",
+      "type": "main",
+      "reps": 5,
+      "distance": 50,
+      "distance_unit": null,
+      "total_distance": 250,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "easy",
+      "source": "https://betterme.world/articles/beginner-swim-sets/",
+      "tags": []
+    },
+    {
+      "text": "- 20 x 25 swim freestyle focusing on a different drill each time, such as single arm, catch-up, or swimming with a kickboard",
+      "type": "kick",
+      "reps": 20,
+      "distance": 25,
+      "distance_unit": null,
+      "total_distance": 500,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [
+        "Kickboard"
+      ],
+      "training_focus": [
+        "technique"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 1.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://betterme.world/articles/beginner-swim-sets/",
+      "tags": []
+    },
+    {
+      "text": "- 5 x 50 easy swim freestyle.",
+      "type": "main",
+      "reps": 5,
+      "distance": 50,
+      "distance_unit": null,
+      "total_distance": 250,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "easy",
+      "source": "https://betterme.world/articles/beginner-swim-sets/",
+      "tags": []
+    },
+    {
+      "text": "2 x 50m Back stroke",
+      "type": "main",
+      "reps": 2,
+      "distance": 50,
+      "distance_unit": "m",
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Backstroke"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://www.speedo.com/blog/swim-plan/best-30-minute-swim-workouts/#main-content",
+      "tags": []
+    },
+    {
+      "text": "Main set 450m1 x 50m Front crawl. Try and swim a little faster than in the warm up.",
+      "type": "main",
+      "reps": 9,
+      "distance": 50,
+      "distance_unit": "m",
+      "total_distance": 450,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Front Crawl"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.3,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "moderate",
+      "source": "https://www.speedo.com/blog/swim-plan/best-30-minute-swim-workouts/#main-content",
+      "tags": []
+    },
+    {
+      "text": "2 x 50m Breaststroke. Aim to swim the second half faster than the first.",
+      "type": "main",
+      "reps": 2,
+      "distance": 50,
+      "distance_unit": "m",
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Breaststroke"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.3,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "moderate",
+      "source": "https://www.speedo.com/blog/swim-plan/best-30-minute-swim-workouts/#main-content",
+      "tags": []
+    },
+    {
+      "text": "1 x 50m Front crawl. Aim to swim the second half faster than the first.",
+      "type": "main",
+      "reps": 1,
+      "distance": 50,
+      "distance_unit": "m",
+      "total_distance": 50,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Front Crawl"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.3,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "moderate",
+      "source": "https://www.speedo.com/blog/swim-plan/best-30-minute-swim-workouts/#main-content",
+      "tags": []
+    },
+    {
+      "text": "3 x 50m Front crawl. Aim to swim the second half faster than the first.",
+      "type": "main",
+      "reps": 3,
+      "distance": 50,
+      "distance_unit": "m",
+      "total_distance": 150,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Front Crawl"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.3,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "moderate",
+      "source": "https://www.speedo.com/blog/swim-plan/best-30-minute-swim-workouts/#main-content",
+      "tags": []
+    },
+    {
+      "text": "Warm down 200m1 x 100m Backstroke",
+      "type": "cooldown",
+      "reps": 2,
+      "distance": 100,
+      "distance_unit": "m",
+      "total_distance": 200,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Backstroke"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://www.speedo.com/blog/swim-plan/best-30-minute-swim-workouts/#main-content",
+      "tags": []
+    },
+    {
+      "text": "1 x 100m Front crawl",
+      "type": "main",
+      "reps": 1,
+      "distance": 100,
+      "distance_unit": "m",
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Front Crawl"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://www.speedo.com/blog/swim-plan/best-30-minute-swim-workouts/#main-content",
+      "tags": []
+    },
+    {
+      "text": "2 x 50m Breaststroke",
+      "type": "main",
+      "reps": 2,
+      "distance": 50,
+      "distance_unit": "m",
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Breaststroke"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://www.speedo.com/blog/swim-plan/best-30-minute-swim-workouts/#main-content",
+      "tags": []
+    },
+    {
+      "text": "2 x 50m Front crawl with a kick. Hold a kickboard (or float) vertical in front of you, with half the board under the water on the second length of each 50.",
+      "type": "kick",
+      "reps": 2,
+      "distance": 50,
+      "distance_unit": "m",
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Front Crawl"
+      ],
+      "equipment": [
+        "Kickboard",
+        "Float"
+      ],
+      "training_focus": [
+        "technique"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 1.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://www.speedo.com/blog/swim-plan/best-30-minute-swim-workouts/#main-content",
+      "tags": []
+    },
+    {
+      "text": "2 x 50m Backstroke with a kick. Hold a kickboard (or float) vertical in front of you, with half the board under the water on the second length of each 50.",
+      "type": "kick",
+      "reps": 2,
+      "distance": 50,
+      "distance_unit": "m",
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Backstroke"
+      ],
+      "equipment": [
+        "Kickboard",
+        "Float"
+      ],
+      "training_focus": [
+        "technique"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 1.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://www.speedo.com/blog/swim-plan/best-30-minute-swim-workouts/#main-content",
+      "tags": []
+    },
+    {
+      "text": "1 x 100m Front crawl. Fastest possible speed taking the fewest strokes.",
+      "type": "main",
+      "reps": 1,
+      "distance": 100,
+      "distance_unit": "m",
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Front Crawl"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.3,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "fast",
+      "source": "https://www.speedo.com/blog/swim-plan/best-30-minute-swim-workouts/#main-content",
+      "tags": []
+    },
+    {
+      "text": "Cool down 200m1 x 100m Breaststroke. Steady.",
+      "type": "cooldown",
+      "reps": 2,
+      "distance": 100,
+      "distance_unit": "m",
+      "total_distance": 200,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Breaststroke"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.3
+      },
+      "intensity": "steady",
+      "source": "https://www.speedo.com/blog/swim-plan/best-30-minute-swim-workouts/#main-content",
+      "tags": []
+    },
+    {
+      "text": "1 x 100m Front crawl. Steady.",
+      "type": "main",
+      "reps": 1,
+      "distance": 100,
+      "distance_unit": "m",
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Front Crawl"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.3
+      },
+      "intensity": "steady",
+      "source": "https://www.speedo.com/blog/swim-plan/best-30-minute-swim-workouts/#main-content",
+      "tags": []
+    },
+    {
+      "text": "- 12x25 as four swim, four pull, and four kick. Descend each set of four to 90% effort. Rest for 30 seconds in between each set of repetitions.",
+      "type": "kick",
+      "reps": 12,
+      "distance": 25,
+      "distance_unit": null,
+      "total_distance": 300,
+      "time_target": null,
+      "rest": {
+        "raw": "rest for 30 seconds",
+        "type": "time",
+        "value": "30s"
+      },
+      "strokes": [],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.3,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://shopzygo.com/blogs/blog/swimming-workouts",
+      "tags": []
+    },
+    {
+      "text": "- 20x25 fast freestyle swim! Rest 30 seconds between each set of repetitions.",
+      "type": "main",
+      "reps": 20,
+      "distance": 25,
+      "distance_unit": null,
+      "total_distance": 500,
+      "time_target": null,
+      "rest": {
+        "raw": "rest 30 seconds",
+        "type": "time",
+        "value": "30s"
+      },
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "lactate"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.85,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "fast",
+      "source": "https://shopzygo.com/blogs/blog/swimming-workouts",
+      "tags": []
+    },
+    {
+      "text": "- 100m easy swim. Repeat if you want!",
+      "type": "main",
+      "reps": null,
+      "distance": 100,
+      "distance_unit": "m",
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "easy",
+      "source": "https://shopzygo.com/blogs/blog/swimming-workouts",
+      "tags": []
+    },
+    {
+      "text": "- 800m pull at a moderate pace",
+      "type": "pull",
+      "reps": null,
+      "distance": 800,
+      "distance_unit": "m",
+      "total_distance": 800,
+      "time_target": null,
+      "rest": null,
+      "strokes": [],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "moderate",
+      "source": "https://shopzygo.com/blogs/blog/swimming-workouts",
+      "tags": []
+    },
+    {
+      "text": "- 8 x 100m decreasing intervals; 1:40, 1:35, 1:25, 1:40, 1:35, 1:30, 1:25",
+      "type": "main",
+      "reps": 8,
+      "distance": 100,
+      "distance_unit": "m",
+      "total_distance": 800,
+      "time_target": [
+        "1:40",
+        "1:35",
+        "1:25",
+        "1:40",
+        "1:35",
+        "1:30",
+        "1:25"
+      ],
+      "rest": null,
+      "strokes": [],
+      "equipment": [],
+      "training_focus": [
+        "stamina"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.85
+      },
+      "intensity": null,
+      "source": "https://shopzygo.com/blogs/blog/swimming-workouts",
+      "tags": []
+    },
+    {
+      "text": "- 4 x 200m. Build pace from slow and easy for the first repetition up to a fast race pace by the 4th.",
+      "type": "preset",
+      "reps": 4,
+      "distance": 200,
+      "distance_unit": "m",
+      "total_distance": 800,
+      "time_target": null,
+      "rest": null,
+      "strokes": [],
+      "equipment": [],
+      "training_focus": [
+        "lactate"
+      ],
+      "training_focus_certainty": {
+        "lactate": 1.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "easy",
+      "source": "https://shopzygo.com/blogs/blog/swimming-workouts",
+      "tags": []
+    },
+    {
+      "text": "- 8 x 50m. Alternate speeds for each rep. Odd numbers fast, even numbers slow and easy.",
+      "type": "main",
+      "reps": 8,
+      "distance": 50,
+      "distance_unit": "m",
+      "total_distance": 400,
+      "time_target": null,
+      "rest": null,
+      "strokes": [],
+      "equipment": [],
+      "training_focus": [
+        "lactate"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.85,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "easy",
+      "source": "https://shopzygo.com/blogs/blog/swimming-workouts",
+      "tags": []
+    },
+    {
+      "text": "- 40x 25 kick at 85 to 90% effort, alternate each repetition with 20 to 25 seconds of easy swimming.",
+      "type": "kick",
+      "reps": 40,
+      "distance": 25,
+      "distance_unit": null,
+      "total_distance": 1000,
+      "time_target": null,
+      "rest": null,
+      "strokes": [],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "easy",
+      "source": "https://shopzygo.com/blogs/blog/swimming-workouts",
+      "tags": []
+    },
+    {
+      "text": "- 8 × 50m freestyle with pull-buoy. Pick up speed in the last 25m of each 50. Take 20 seconds of rest after each repetition.",
+      "type": "pull",
+      "reps": null,
+      "distance": 50,
+      "distance_unit": "m",
+      "total_distance": 50,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://shopzygo.com/blogs/blog/swimming-workouts",
+      "tags": []
+    },
+    {
+      "text": "- 4 x 100m freestyle with pull-buoy. Pick up speed in the last 50 m of each 100. Take 20 seconds of rest after each repetition.",
+      "type": "pull",
+      "reps": 4,
+      "distance": 100,
+      "distance_unit": "m",
+      "total_distance": 400,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://shopzygo.com/blogs/blog/swimming-workouts",
+      "tags": []
+    },
+    {
+      "text": "- 2 x 200m freestyle with pull-buoy. Pick up speed in the last 100 m of each 100. Take 20 seconds of rest after each repetition.",
+      "type": "pull",
+      "reps": 2,
+      "distance": 200,
+      "distance_unit": "m",
+      "total_distance": 400,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://shopzygo.com/blogs/blog/swimming-workouts",
+      "tags": []
+    },
+    {
+      "text": "- 100m of a nice easy swim",
+      "type": "main",
+      "reps": null,
+      "distance": 100,
+      "distance_unit": "m",
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "easy",
+      "source": "https://shopzygo.com/blogs/blog/swimming-workouts",
+      "tags": []
+    },
+    {
+      "text": "- 6 x 50m freestyle with pull-buoy and swim paddles. Keep a fact pace! Thirty seconds rest after each repetition.",
+      "type": "pull",
+      "reps": 6,
+      "distance": 50,
+      "distance_unit": "m",
+      "total_distance": 300,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [
+        "Paddles"
+      ],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://shopzygo.com/blogs/blog/swimming-workouts",
+      "tags": []
+    },
+    {
+      "text": "- 3 x 100 freestyle with pull-buoy and swim paddles. Keep a fast pace! Thirty-five seconds rest after each repetition.",
+      "type": "pull",
+      "reps": 3,
+      "distance": 100,
+      "distance_unit": null,
+      "total_distance": 300,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [
+        "Paddles"
+      ],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.3,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "fast",
+      "source": "https://shopzygo.com/blogs/blog/swimming-workouts",
+      "tags": []
+    },
+    {
+      "text": "- 4 x 25 Freestyle (Silent Swimming)",
+      "type": "main",
+      "reps": 4,
+      "distance": 25,
+      "distance_unit": null,
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    },
+    {
+      "text": "- 4 x 50 Freestyle (Negative Split Strokes*)",
+      "type": "main",
+      "reps": 4,
+      "distance": 50,
+      "distance_unit": null,
+      "total_distance": 200,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    },
+    {
+      "text": "- 1 x 100 Freestyle (Strong breakout on each 25)",
+      "type": "main",
+      "reps": 1,
+      "distance": 100,
+      "distance_unit": null,
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    },
+    {
+      "text": "- 1 x 100 Freestyle (Build each 25)",
+      "type": "preset",
+      "reps": 1,
+      "distance": 100,
+      "distance_unit": null,
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    },
+    {
+      "text": "- 3 x 50 Freestyle (Descend 1-3 to 98%)",
+      "type": "main",
+      "reps": 3,
+      "distance": 50,
+      "distance_unit": null,
+      "total_distance": 150,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.3,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    },
+    {
+      "text": "- 1 x 50 Freestyle (Silent Swimming)",
+      "type": "main",
+      "reps": 1,
+      "distance": 50,
+      "distance_unit": null,
+      "total_distance": 50,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    },
+    {
+      "text": "- 4 x 50 Freestyle/Backstroke (Alternate by 25)",
+      "type": "main",
+      "reps": 4,
+      "distance": 50,
+      "distance_unit": null,
+      "total_distance": 200,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle",
+        "Backstroke"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    },
+    {
+      "text": "- 1 x 200 Freestyle (50 Strong, 50 Easy)",
+      "type": "main",
+      "reps": 1,
+      "distance": 200,
+      "distance_unit": null,
+      "total_distance": 200,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "easy",
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    },
+    {
+      "text": "- 1 x 100 Freestyle (Silent Swimming)",
+      "type": "main",
+      "reps": 1,
+      "distance": 100,
+      "distance_unit": null,
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    },
+    {
+      "text": "4 x 25 Freestyle (Silent Swimming)",
+      "type": "main",
+      "reps": 4,
+      "distance": 25,
+      "distance_unit": null,
+      "total_distance": 100,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    },
+    {
+      "text": "- 2 x 25 Freestyle with a parachute (1 Strength Focus, 1 Power Focus)",
+      "type": "main",
+      "reps": 2,
+      "distance": 25,
+      "distance_unit": null,
+      "total_distance": 50,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    },
+    {
+      "text": "- 3 x 50 Freestyle",
+      "type": "main",
+      "reps": 3,
+      "distance": 50,
+      "distance_unit": null,
+      "total_distance": 150,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    },
+    {
+      "text": "- 1 x 50 Freestyle @ 200 Pace",
+      "type": "main",
+      "reps": 1,
+      "distance": 50,
+      "distance_unit": null,
+      "total_distance": 50,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    },
+    {
+      "text": "- 1 x 50 Freestyle Easy",
+      "type": "main",
+      "reps": 1,
+      "distance": 50,
+      "distance_unit": null,
+      "total_distance": 50,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": "easy",
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    },
+    {
+      "text": "- 16 x 25 Freestyle @ :30 @ 100 Pace",
+      "type": "main",
+      "reps": 16,
+      "distance": 25,
+      "distance_unit": null,
+      "total_distance": 400,
+      "time_target": null,
+      "rest": null,
+      "strokes": [
+        "Freestyle"
+      ],
+      "equipment": [],
+      "training_focus": [
+        "general"
+      ],
+      "training_focus_certainty": {
+        "lactate": 0.0,
+        "breathing": 0.0,
+        "technique": 0.0,
+        "stamina": 0.0
+      },
+      "intensity": null,
+      "source": "https://blog.myswimpro.com/2021/11/16/top-4-swim-workouts-to-build-speed-power/#respond",
+      "tags": []
+    }
+  ]
+}

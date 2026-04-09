@@ -1,0 +1,27 @@
+.container {
+  text-align: center;
+  margin-top: 80px;
+  font-family: Arial, sans-serif;
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 120px);
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+button {
+  padding: 15px;
+  font-size: 18px;
+  border: none;
+  border-radius: 10px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
