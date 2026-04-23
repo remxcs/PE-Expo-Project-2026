@@ -1,0 +1,91 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'eu-west-1' }}
+  SAM_STACK_NAME: ${{ vars.SAM_STACK_NAME || 'pe-expo-project-2026' }}
+  SAM_DEPLOY_ROLE_ARN: ${{ vars.SAM_DEPLOY_ROLE_ARN }}
+  SAM_ARTIFACTS_BUCKET: ${{ vars.SAM_ARTIFACTS_BUCKET }}
+  WEB_S3_BUCKET: ${{ vars.WEB_S3_BUCKET }}
+  WEB_CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.WEB_CLOUDFRONT_DISTRIBUTION_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+
+      - name: Configure AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.SAM_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          allowed-account-ids: 879641206317
+
+      - name: Verify deploy configuration
+        shell: bash
+        run: |
+          test -n "$SAM_DEPLOY_ROLE_ARN" || (echo "Missing repo/environment variable: SAM_DEPLOY_ROLE_ARN" && exit 1)
+          test -n "$SAM_ARTIFACTS_BUCKET" || (echo "Missing repo/environment variable: SAM_ARTIFACTS_BUCKET" && exit 1)
+          test -n "$WEB_S3_BUCKET" || (echo "Missing repo/environment variable: WEB_S3_BUCKET" && exit 1)
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Build SAM application
+        run: sam build --template-file apps/api/template.yaml
+
+      - name: Deploy SAM stack
+        run: >-
+          sam deploy
+          --template-file apps/api/template.yaml
+          --stack-name "$SAM_STACK_NAME"
+          --region "$AWS_REGION"
+          --s3-bucket "$SAM_ARTIFACTS_BUCKET"
+          --capabilities CAPABILITY_IAM
+          --no-confirm-changeset
+          --no-fail-on-empty-changeset
+
+      - name: Resolve API base URL
+        shell: bash
+        run: |
+          API_BASE_URL=$(aws cloudformation describe-stacks \
+            --stack-name "$SAM_STACK_NAME" \
+            --region "$AWS_REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='ApiBaseUrl'].OutputValue" \
+            --output text)
+          test -n "$API_BASE_URL" || (echo "Failed to resolve ApiBaseUrl stack output" && exit 1)
+          echo "VITE_API_BASE_URL=$API_BASE_URL" >> "$GITHUB_ENV"
+
+      - name: Build web app
+        run: npm run build:web
+
+      - name: Upload web assets
+        run: aws s3 sync apps/web/dist "s3://$WEB_S3_BUCKET" --delete
+
+      - name: Invalidate CloudFront cache
+        if: ${{ env.WEB_CLOUDFRONT_DISTRIBUTION_ID != '' }}
+        run: >-
+          aws cloudfront create-invalidation
+          --distribution-id "$WEB_CLOUDFRONT_DISTRIBUTION_ID"
+          --paths "/*"
