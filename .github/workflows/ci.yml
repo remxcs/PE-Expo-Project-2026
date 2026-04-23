@@ -43,4 +43,15 @@ jobs:
         uses: aws-actions/setup-sam@v2
 
       - name: Validate SAM template
-        run: sam validate --template-file apps/api/template.yaml --region "$AWS_REGION"
+        run: >-
+          sam validate
+          --template-file apps/api/template.yaml
+          --region "$AWS_REGION"
+          --parameter-overrides
+          WebAllowedOrigins="http://localhost:5173,http://localhost:4173"
+          AuthRedirectUrls="http://localhost:5173/,http://localhost:4173/"
+          ApiCustomDomainName="api.example.invalid"
+          HostedZoneId="Z0000000000000EXAMPLE"
+          CognitoDomainPrefix="pe-expo-project-2026-ci"
+          GoogleClientId="google-client-id-placeholder"
+          GoogleClientSecret="google-client-secret-placeholder"
