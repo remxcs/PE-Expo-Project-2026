@@ -6,3 +6,11 @@ __pycache__/
 *.key
 *.p12
 *.pfx
+node_modules/
+dist/
+.aws-sam/
+.sam-cache/
+coverage/
+.DS_Store
+.idea/
+.vscode/

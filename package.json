@@ -1,0 +1,18 @@
+{
+  "name": "pe-expo-project-2026",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace @pe-expo/web",
+    "build": "npm run build:web",
+    "build:web": "npm run build --workspace @pe-expo/web",
+    "build:api": "npm run build --workspace @pe-expo/api",
+    "lint": "npm run lint:web",
+    "lint:web": "npm run lint --workspace @pe-expo/web",
+    "check": "npm run lint && npm run build"
+  }
+}

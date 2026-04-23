@@ -3,6 +3,7 @@ import "./App.css";
 
 export default function App() {
   const [answer, setAnswer] = useState(null);
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 
   function saveAnswer(choice) {
     setAnswer(choice);
@@ -37,6 +38,9 @@ export default function App() {
       </div>
 
       {answer && <p>Selected: {answer}</p>}
+      <p>
+        API health endpoint: {apiBaseUrl ? `${apiBaseUrl}/health` : "set VITE_API_BASE_URL to connect the backend scaffold"}
+      </p>
     </div>
   );
 }
