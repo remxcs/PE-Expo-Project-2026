@@ -1,5 +1,8 @@
 name: CI
 
+env:
+  AWS_REGION: eu-west-1
+
 on:
   push:
     branches:
@@ -40,4 +43,4 @@ jobs:
         uses: aws-actions/setup-sam@v2
 
       - name: Validate SAM template
-        run: sam validate --template-file apps/api/template.yaml
+        run: sam validate --template-file apps/api/template.yaml --region "$AWS_REGION"

@@ -40,7 +40,12 @@ jobs:
         with:
           role-to-assume: ${{ env.SAM_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-          allowed-account-ids: 879641206317
+
+      - name: Verify AWS account
+        shell: bash
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          test "$ACCOUNT_ID" = "879641206317" || (echo "Unexpected AWS account: $ACCOUNT_ID" && exit 1)
 
       - name: Verify deploy configuration
         shell: bash
