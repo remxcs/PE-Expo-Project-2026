@@ -1,0 +1,10 @@
+{
+  "name": "@pe-expo/api",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "sam build --template-file template.yaml",
+    "validate": "sam validate --template-file template.yaml"
+  }
+}

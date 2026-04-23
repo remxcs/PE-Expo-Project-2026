@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: PE Expo Project 2026 API scaffold
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 5
+    MemorySize: 128
+
+Resources:
+  ApiGateway:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: prod
+
+  HealthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/functions/
+      Handler: health.handler
+      Description: Health check endpoint for the PE Expo backend scaffold.
+      Events:
+        HealthRoute:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ApiGateway
+            Path: /health
+            Method: GET
+
+Outputs:
+  ApiBaseUrl:
+    Description: Base URL for the deployed HTTP API.
+    Value:
+      Fn::Sub: https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod
+
+  HealthEndpoint:
+    Description: Health endpoint URL.
+    Value:
+      Fn::Sub: https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/health
