@@ -1,6 +1,37 @@
+# yaml-language-server: $schema=
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: PE Expo Project 2026 API scaffold
+
+Parameters:
+  WebAllowedOrigins:
+    Type: CommaDelimitedList
+    Description: Allowed web origins for API CORS.
+    Default: http://localhost:5173
+  AuthRedirectUrls:
+    Type: CommaDelimitedList
+    Description: Allowed redirect and logout URLs for Cognito hosted UI.
+    Default: http://localhost:5173/
+  CognitoDomainPrefix:
+    Type: String
+    Description: Prefix for the Cognito hosted UI domain.
+    Default: pe-expo-project-2026
+    AllowedPattern: '^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$'
+  ApiCustomDomainName:
+    Type: String
+    Description: Custom domain name for the HTTP API.
+    Default: api.example.invalid
+  HostedZoneId:
+    Type: String
+    Description: Route53 hosted zone ID used for DNS validated certificates and alias records.
+    Default: Z0000000000000EXAMPLE
+  GoogleClientId:
+    Type: String
+    Description: Google OAuth client ID used by Cognito federation.
+  GoogleClientSecret:
+    Type: String
+    Description: Google OAuth client secret used by Cognito federation.
+    NoEcho: true
 
 Globals:
   Function:
@@ -13,6 +44,144 @@ Resources:
     Type: AWS::Serverless::HttpApi
     Properties:
       StageName: prod
+      CorsConfiguration:
+        AllowOrigins:
+          Ref: WebAllowedOrigins
+        AllowMethods:
+          - GET
+          - OPTIONS
+        AllowHeaders:
+          - Authorization
+          - Content-Type
+        AllowCredentials: true
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            IdentitySource: $request.header.Authorization
+            JwtConfiguration:
+              issuer:
+                Fn::Sub: https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
+              audience:
+                - Ref: UserPoolClient
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName:
+        Fn::Sub: ${AWS::StackName}-users
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+
+  UserPoolGoogleIdentityProvider:
+    Type: AWS::Cognito::UserPoolIdentityProvider
+    Properties:
+      ProviderName: Google
+      ProviderType: Google
+      UserPoolId:
+        Ref: UserPool
+      ProviderDetails:
+        client_id:
+          Ref: GoogleClientId
+        client_secret:
+          Ref: GoogleClientSecret
+        authorize_scopes: openid email profile
+      AttributeMapping:
+        email: email
+        given_name: given_name
+        family_name: family_name
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn:
+      - UserPoolGoogleIdentityProvider
+    Properties:
+      ClientName:
+        Fn::Sub: ${AWS::StackName}-web
+      UserPoolId:
+        Ref: UserPool
+      GenerateSecret: false
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+      CallbackURLs:
+        Ref: AuthRedirectUrls
+      LogoutURLs:
+        Ref: AuthRedirectUrls
+      SupportedIdentityProviders:
+        - COGNITO
+        - Google
+      ExplicitAuthFlows:
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain:
+        Ref: CognitoDomainPrefix
+      UserPoolId:
+        Ref: UserPool
+
+  ApiCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName:
+        Ref: ApiCustomDomainName
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName:
+            Ref: ApiCustomDomainName
+          HostedZoneId:
+            Ref: HostedZoneId
+
+  ApiCustomDomain:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties:
+      DomainName:
+        Ref: ApiCustomDomainName
+      DomainNameConfigurations:
+        - CertificateArn:
+            Ref: ApiCertificate
+          EndpointType: REGIONAL
+          SecurityPolicy: TLS_1_2
+
+  ApiCustomDomainMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    Properties:
+      ApiId:
+        Ref: ApiGateway
+      DomainName:
+        Ref: ApiCustomDomain
+      Stage: prod
+
+  ApiCustomDomainRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId:
+        Ref: HostedZoneId
+      Name:
+        Ref: ApiCustomDomainName
+      Type: A
+      AliasTarget:
+        DNSName:
+          Fn::GetAtt:
+            - ApiCustomDomain
+            - RegionalDomainName
+        HostedZoneId:
+          Fn::GetAtt:
+            - ApiCustomDomain
+            - RegionalHostedZoneId
 
   HealthFunction:
     Type: AWS::Serverless::Function
@@ -29,13 +198,50 @@ Resources:
             Path: /health
             Method: GET
 
+  MeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/functions/
+      Handler: me.handler
+      Description: Returns the current authenticated user profile from Cognito claims.
+      Events:
+        MeRoute:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ApiGateway
+            Path: /me
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
 Outputs:
   ApiBaseUrl:
     Description: Base URL for the deployed HTTP API.
     Value:
+      Fn::Sub: https://${ApiCustomDomainName}
+
+  DefaultApiBaseUrl:
+    Description: Default API Gateway URL before the custom domain.
+    Value:
       Fn::Sub: https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod
+
+  UserPoolClientId:
+    Description: Cognito user pool app client ID for the web application.
+    Value:
+      Ref: UserPoolClient
+
+  CognitoDomainUrl:
+    Description: Cognito hosted UI base URL.
+    Value:
+      Fn::Sub: https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com
+
+  CognitoIssuer:
+    Description: JWT issuer URL for the Cognito user pool.
+    Value:
+      Fn::Sub: https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
 
   HealthEndpoint:
     Description: Health endpoint URL.
     Value:
-      Fn::Sub: https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/health
+      Fn::Sub: https://${ApiCustomDomainName}/health
