@@ -2,7 +2,7 @@ const jsonHeaders = {
   "content-type": "application/json"
 };
 
-export const handler = async (event) => {
+exports.handler = async (event) => {
   const claims = event?.requestContext?.authorizer?.jwt?.claims;
 
   if (!claims) {
