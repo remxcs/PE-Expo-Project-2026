@@ -1,42 +1,26 @@
 :root {
-  --font-body: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --font-body: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: Inter, "Segoe UI", system-ui, sans-serif;
   --font-mono: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
-  --color-bg: #f5f2ea;
-  --color-surface: rgba(255, 252, 246, 0.88);
-  --color-surface-strong: #fffdf8;
-  --color-border: #d5ccba;
-  --color-text: #1d2430;
-  --color-muted: #5f6772;
-  --color-accent: #1f5fbf;
-  --color-accent-strong: #174a96;
-  --color-accent-soft: rgba(31, 95, 191, 0.1);
-  --color-accent-aura: rgba(31, 95, 191, 0.08);
-  --color-accent-ring: rgba(31, 95, 191, 0.2);
-  --color-success: #1f7a52;
-  --color-success-soft: rgba(31, 122, 82, 0.12);
-  --color-danger: #9d2f2f;
-  --color-danger-soft: rgba(157, 47, 47, 0.12);
-  --color-warning: #8b5a14;
-  --color-warning-soft: rgba(139, 90, 20, 0.12);
-  --color-glass: rgba(255, 255, 255, 0.56);
-  --color-glass-soft: rgba(255, 255, 255, 0.48);
-  --color-page-top: #f8f5ee;
-  --color-page-bottom: #f1ece1;
-  --color-code-bg: #1b2230;
-  --color-code-text: #edf3ff;
-  --color-success-border: rgba(31, 122, 82, 0.24);
-  --color-danger-border: rgba(157, 47, 47, 0.24);
-  --color-warning-border: rgba(139, 90, 20, 0.24);
-  --color-border-soft: rgba(213, 204, 186, 0.7);
-  --shadow-soft: 0 22px 45px rgba(34, 28, 18, 0.08);
-  --radius-sm: 12px;
-  --radius-md: 18px;
-  --space-1: 0.5rem;
-  --space-2: 0.75rem;
+  --color-page-top: #0b1022;
+  --color-page-bottom: #f3f6ff;
+  --color-surface: rgba(255, 255, 255, 0.82);
+  --color-surface-strong: #ffffff;
+  --color-text: #13203b;
+  --color-text-soft: #53627f;
+  --color-border-strong: rgba(129, 152, 255, 0.22);
+  --color-brand-purple: #7c4dff;
+  --color-brand-cyan: #45e0ff;
+  --color-brand-pink: #ff5ebc;
+  --color-success: #0c8f5f;
+  --color-danger: #cf315c;
+  --color-warning: #a86511;
+  --shadow-panel: 0 28px 80px rgba(19, 25, 56, 0.16);
   --space-3: 1rem;
   --space-4: 1.5rem;
   --space-5: 2rem;
   --space-6: 3rem;
+  --space-7: 4rem;
 }
 
 * {
@@ -45,7 +29,7 @@
 
 html {
   color: var(--color-text);
-  background: var(--color-bg);
+  background: var(--color-page-top);
 }
 
 body {
@@ -54,8 +38,10 @@ body {
   min-height: 100vh;
   font-family: var(--font-body);
   background:
-    radial-gradient(circle at top, var(--color-accent-aura), transparent 35%),
-    linear-gradient(180deg, var(--color-page-top) 0%, var(--color-page-bottom) 100%);
+    radial-gradient(circle at top left, rgba(69, 224, 255, 0.22), transparent 28%),
+    radial-gradient(circle at top right, rgba(124, 77, 255, 0.22), transparent 24%),
+    radial-gradient(circle at bottom left, rgba(255, 94, 188, 0.14), transparent 22%),
+    linear-gradient(180deg, var(--color-page-top) 0%, #151c3c 28%, var(--color-page-bottom) 100%);
 }
 
 body,
@@ -72,11 +58,12 @@ select {
 
 button {
   border: 1px solid transparent;
+  cursor: pointer;
   transition:
-    transform 160ms ease,
-    background-color 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease;
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease,
+    background-color 150ms ease;
 }
 
 button:hover:not(:disabled) {
@@ -84,7 +71,7 @@ button:hover:not(:disabled) {
 }
 
 button:focus-visible {
-  outline: 3px solid var(--color-accent-ring);
+  outline: 3px solid rgba(69, 224, 255, 0.32);
   outline-offset: 3px;
 }
 
@@ -96,6 +83,15 @@ button:disabled {
 code,
 pre {
   font-family: var(--font-mono);
+}
+
+h1,
+h2,
+h3,
+.hero-badge,
+.sport-kicker,
+.eyebrow {
+  font-family: var(--font-display);
 }
 
 a {

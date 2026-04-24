@@ -4,6 +4,7 @@ const OAUTH_SCOPE = "openid profile email";
 const EXPIRY_BUFFER_MS = 30_000;
 
 let initializationPromise = null;
+let refreshPromise = null;
 
 function normalizeUrl(value) {
   return value?.trim().replace(/\/+$/, "") ?? "";
@@ -83,6 +84,33 @@ function saveJsonToStorage(key, value) {
   window.sessionStorage.setItem(key, JSON.stringify(value));
 }
 
+function createSession(tokenResponse, previousSession = null) {
+  const expiresInMs = Number(tokenResponse.expires_in ?? 3600) * 1000;
+
+  return {
+    accessToken: tokenResponse.access_token,
+    idToken: tokenResponse.id_token ?? previousSession?.idToken ?? "",
+    refreshToken: tokenResponse.refresh_token ?? previousSession?.refreshToken ?? "",
+    tokenType: tokenResponse.token_type ?? previousSession?.tokenType ?? "Bearer",
+    scope: tokenResponse.scope ?? previousSession?.scope ?? OAUTH_SCOPE,
+    expiresAt: Date.now() + expiresInMs,
+  };
+}
+
+function saveSession(tokenResponse, previousSession = null) {
+  const session = createSession(tokenResponse, previousSession);
+  saveJsonToStorage(AUTH_SESSION_STORAGE_KEY, session);
+  return session;
+}
+
+function readStoredSession() {
+  return readJsonFromStorage(AUTH_SESSION_STORAGE_KEY);
+}
+
+function isSessionExpired(session) {
+  return !session?.expiresAt || Number(session.expiresAt) <= Date.now() + EXPIRY_BUFFER_MS;
+}
+
 function readPkceState() {
   return readJsonFromStorage(PKCE_STORAGE_KEY);
 }
@@ -93,25 +121,6 @@ function savePkceState(value) {
 
 function clearPkceState() {
   window.sessionStorage.removeItem(PKCE_STORAGE_KEY);
-}
-
-function createSession(tokenResponse) {
-  const expiresInMs = Number(tokenResponse.expires_in ?? 3600) * 1000;
-
-  return {
-    accessToken: tokenResponse.access_token,
-    idToken: tokenResponse.id_token ?? "",
-    refreshToken: tokenResponse.refresh_token ?? "",
-    tokenType: tokenResponse.token_type ?? "Bearer",
-    scope: tokenResponse.scope ?? OAUTH_SCOPE,
-    expiresAt: Date.now() + expiresInMs,
-  };
-}
-
-function saveSession(tokenResponse) {
-  const session = createSession(tokenResponse);
-  saveJsonToStorage(AUTH_SESSION_STORAGE_KEY, session);
-  return session;
 }
 
 export function clearStoredSession() {
@@ -141,14 +150,9 @@ function requireAuthConfig() {
 }
 
 export function restoreSession() {
-  const session = readJsonFromStorage(AUTH_SESSION_STORAGE_KEY);
+  const session = readStoredSession();
 
   if (!session?.accessToken || !session?.expiresAt) {
-    clearStoredSession();
-    return null;
-  }
-
-  if (Number(session.expiresAt) <= Date.now() + EXPIRY_BUFFER_MS) {
     clearStoredSession();
     return null;
   }
@@ -156,21 +160,15 @@ export function restoreSession() {
   return session;
 }
 
-async function exchangeCodeForSession({ code, verifier }) {
-  const { cognitoDomain, cognitoClientId } = requireAuthConfig();
+async function requestToken(body) {
+  const { cognitoDomain } = requireAuthConfig();
   const tokenEndpoint = new URL("oauth2/token", ensureTrailingSlash(cognitoDomain));
   const response = await fetch(tokenEndpoint.toString(), {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: new URLSearchParams({
-      grant_type: "authorization_code",
-      client_id: cognitoClientId,
-      code,
-      code_verifier: verifier,
-      redirect_uri: getRedirectUri(),
-    }),
+    body,
   });
 
   const payload = await parseResponse(response);
@@ -178,14 +176,76 @@ async function exchangeCodeForSession({ code, verifier }) {
   if (!response.ok) {
     const message = typeof payload === "string"
       ? payload
-      : payload.error_description || payload.error || "Unable to finish sign-in.";
+      : payload.error_description || payload.error || "Unable to complete authentication.";
 
     const error = new Error(message);
     error.status = response.status;
     throw error;
   }
 
+  return payload;
+}
+
+async function exchangeCodeForSession({ code, verifier }) {
+  const { cognitoClientId } = requireAuthConfig();
+  const payload = await requestToken(new URLSearchParams({
+    grant_type: "authorization_code",
+    client_id: cognitoClientId,
+    code,
+    code_verifier: verifier,
+    redirect_uri: getRedirectUri(),
+  }));
+
   return saveSession(payload);
+}
+
+export async function refreshSession() {
+  const storedSession = readStoredSession();
+
+  if (!storedSession?.refreshToken) {
+    clearStoredSession();
+    return null;
+  }
+
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      const { cognitoClientId } = requireAuthConfig();
+      const payload = await requestToken(new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: cognitoClientId,
+        refresh_token: storedSession.refreshToken,
+      }));
+
+      return saveSession(payload, storedSession);
+    })()
+      .catch((error) => {
+        clearStoredSession();
+        throw error;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+}
+
+export async function getActiveSession() {
+  const session = restoreSession();
+
+  if (!session) {
+    return null;
+  }
+
+  if (!isSessionExpired(session)) {
+    return session;
+  }
+
+  try {
+    return await refreshSession();
+  } catch {
+    return null;
+  }
 }
 
 async function initializeAuthInternal() {
@@ -233,7 +293,13 @@ async function initializeAuthInternal() {
     }
   }
 
-  return { session: restoreSession(), error: null };
+  const session = await getActiveSession();
+
+  if (!session) {
+    return { session: null, error: null };
+  }
+
+  return { session, error: null };
 }
 
 export function initializeAuth() {

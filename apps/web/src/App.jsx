@@ -3,37 +3,102 @@ import "./App.css";
 import {
   clearStoredSession,
   fetchProtectedProfile,
+  getActiveSession,
   getAuthConfig,
   initializeAuth,
   signInWithGoogle,
   signOut,
 } from "./auth";
 
-const ANSWER_STORAGE_KEY = "pe-expo.answer";
+const SPORT_STORAGE_KEY = "pe-expo.selected-sport";
+const ANSWERS_STORAGE_KEY = "pe-expo.sport-answers";
 const EMPTY_PROFILE_STATE = {
   status: "idle",
   data: null,
   error: "",
 };
 
-function formatExpiration(expiresAt) {
-  if (!expiresAt) {
-    return "Unknown";
+const SPORTS = [
+  {
+    id: "waterpolo",
+    name: "Waterpolo",
+    description: "Fast decisions, strong teamwork, and game-day focus in the pool.",
+    accent: "is-waterpolo",
+  },
+  {
+    id: "basketball",
+    name: "Basketball",
+    description: "Sharp movement, big energy, and confident calls on the court.",
+    accent: "is-basketball",
+  },
+];
+
+function readStoredAnswers() {
+  const rawValue = window.sessionStorage.getItem(ANSWERS_STORAGE_KEY);
+
+  if (!rawValue) {
+    return {};
   }
 
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(expiresAt));
+  try {
+    return JSON.parse(rawValue);
+  } catch {
+    window.sessionStorage.removeItem(ANSWERS_STORAGE_KEY);
+    return {};
+  }
+}
+
+function writeStoredAnswers(value) {
+  window.sessionStorage.setItem(ANSWERS_STORAGE_KEY, JSON.stringify(value));
+}
+
+function buildAnswerDownload(sportName, choice) {
+  return {
+    sport: sportName,
+    answer: choice,
+    time: new Date().toISOString(),
+  };
+}
+
+function downloadAnswerFile(sportName, choice) {
+  const data = buildAnswerDownload(sportName, choice);
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json",
+  });
+  const fileName = `${sportName.toLowerCase()}-answer.json`;
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function buildDisplayName(profile) {
+  if (!profile) {
+    return "Player";
+  }
+
+  return profile.givenName || profile.name || profile.email || "Player";
+}
+
+function getSportById(sportId) {
+  return SPORTS.find((sport) => sport.id === sportId) ?? null;
+}
+
+function clearLocalSportState() {
+  window.sessionStorage.removeItem(SPORT_STORAGE_KEY);
+  window.sessionStorage.removeItem(ANSWERS_STORAGE_KEY);
 }
 
 export default function App() {
   const authConfig = useMemo(() => getAuthConfig(), []);
-  const [answer, setAnswer] = useState(() => window.sessionStorage.getItem(ANSWER_STORAGE_KEY));
   const [authStatus, setAuthStatus] = useState("loading");
   const [authError, setAuthError] = useState("");
   const [session, setSession] = useState(null);
   const [profileState, setProfileState] = useState(EMPTY_PROFILE_STATE);
+  const [selectedSportId, setSelectedSportId] = useState(() => window.sessionStorage.getItem(SPORT_STORAGE_KEY) || "");
+  const [answersBySport, setAnswersBySport] = useState(() => readStoredAnswers());
 
   const missingAuthConfig = [];
 
@@ -45,18 +110,23 @@ export default function App() {
     missingAuthConfig.push("VITE_COGNITO_CLIENT_ID");
   }
 
-  const apiHealthEndpoint = authConfig.apiBaseUrl
-    ? `${authConfig.apiBaseUrl}/health`
-    : "set VITE_API_BASE_URL to connect the backend scaffold";
+  const selectedSport = getSportById(selectedSportId);
+  const displayName = buildDisplayName(profileState.data);
+  const selectedAnswer = selectedSport ? answersBySport[selectedSport.id] ?? null : null;
 
-  const loadProfile = useCallback(async (accessToken) => {
+  const loadProfile = useCallback(async (activeSession) => {
+    if (!activeSession?.accessToken) {
+      setProfileState(EMPTY_PROFILE_STATE);
+      return null;
+    }
+
     if (!authConfig.apiBaseUrl) {
       setProfileState({
         status: "error",
         data: null,
         error: "Set VITE_API_BASE_URL to call the protected /me endpoint.",
       });
-      return;
+      return activeSession;
     }
 
     setProfileState({
@@ -66,18 +136,42 @@ export default function App() {
     });
 
     try {
-      const profile = await fetchProtectedProfile(accessToken);
+      const nextSession = await getActiveSession();
+
+      if (!nextSession?.accessToken) {
+        clearStoredSession();
+        clearLocalSportState();
+        setSession(null);
+        setAuthStatus("signed_out");
+        setProfileState(EMPTY_PROFILE_STATE);
+        setSelectedSportId("");
+        setAnswersBySport({});
+        setAuthError("Your session expired and could not be refreshed. Sign in again to continue.");
+        return null;
+      }
+
+      if (nextSession.accessToken !== activeSession.accessToken) {
+        setSession(nextSession);
+      }
+
+      const profile = await fetchProtectedProfile(nextSession.accessToken);
+
       setProfileState({
         status: "success",
         data: profile,
         error: "",
       });
+
+      return nextSession;
     } catch (error) {
       if (error?.status === 401) {
         clearStoredSession();
+        clearLocalSportState();
         setSession(null);
         setAuthStatus("signed_out");
-        setAuthError("Your API session is no longer valid. Sign in again to refresh it.");
+        setSelectedSportId("");
+        setAnswersBySport({});
+        setAuthError("Your session expired and could not be refreshed. Sign in again to continue.");
       }
 
       setProfileState({
@@ -85,6 +179,8 @@ export default function App() {
         data: null,
         error: error instanceof Error ? error.message : "The protected /me request failed.",
       });
+
+      return null;
     }
   }, [authConfig.apiBaseUrl]);
 
@@ -93,7 +189,6 @@ export default function App() {
 
     async function bootstrapAuth() {
       setAuthStatus("loading");
-
       const result = await initializeAuth();
 
       if (!active) {
@@ -104,8 +199,10 @@ export default function App() {
       setAuthError(result.error ?? "");
       setAuthStatus(result.session ? "signed_in" : "signed_out");
 
-      if (result.session?.accessToken && authConfig.apiBaseUrl) {
-        await loadProfile(result.session.accessToken);
+      if (result.session?.accessToken) {
+        await loadProfile(result.session);
+      } else {
+        setProfileState(EMPTY_PROFILE_STATE);
       }
     }
 
@@ -117,12 +214,54 @@ export default function App() {
       setSession(null);
       setAuthStatus("signed_out");
       setAuthError(error instanceof Error ? error.message : "Unable to restore your session.");
+      setProfileState(EMPTY_PROFILE_STATE);
     });
 
     return () => {
       active = false;
     };
-  }, [authConfig.apiBaseUrl, loadProfile]);
+  }, [loadProfile]);
+
+  useEffect(() => {
+    if (!session) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      getActiveSession()
+        .then((nextSession) => {
+          if (!nextSession) {
+            clearStoredSession();
+            clearLocalSportState();
+            setSession(null);
+            setAuthStatus("signed_out");
+            setSelectedSportId("");
+            setAnswersBySport({});
+            setAuthError("Your session expired and could not be refreshed. Sign in again to continue.");
+            setProfileState(EMPTY_PROFILE_STATE);
+            return;
+          }
+
+          if (nextSession.accessToken !== session.accessToken || nextSession.expiresAt !== session.expiresAt) {
+            setSession(nextSession);
+          }
+        })
+        .catch(() => {
+          clearStoredSession();
+          clearLocalSportState();
+          setSession(null);
+          setAuthStatus("signed_out");
+          setSelectedSportId("");
+          setAnswersBySport({});
+          setAuthError("Your session expired and could not be refreshed. Sign in again to continue.");
+          setProfileState(EMPTY_PROFILE_STATE);
+        });
+    }, 30_000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [session]);
 
   async function handleLogin() {
     setAuthError("");
@@ -137,159 +276,192 @@ export default function App() {
   }
 
   function handleLogout() {
-    setProfileState(EMPTY_PROFILE_STATE);
     setSession(null);
     setAuthStatus("signed_out");
     setAuthError("");
+    setProfileState(EMPTY_PROFILE_STATE);
+    setSelectedSportId("");
+    setAnswersBySport({});
+    clearLocalSportState();
     signOut();
   }
 
-  function saveAnswer(choice) {
-    setAnswer(choice);
-    window.sessionStorage.setItem(ANSWER_STORAGE_KEY, choice);
-
-    const data = {
-      answer: choice,
-      time: new Date().toISOString()
-    };
-
-    const blob = new Blob(
-      [JSON.stringify(data, null, 2)],
-      { type: "application/json" }
-    );
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "answer.json";
-    a.click();
-    URL.revokeObjectURL(url);
+  function handleSportSelect(sportId) {
+    setSelectedSportId(sportId);
+    window.sessionStorage.setItem(SPORT_STORAGE_KEY, sportId);
   }
 
-  return (
-    <main className="app-shell">
-      <header className="page-header">
-        <p className="eyebrow">PE Expo frontend</p>
-        <h1>Simple Cognito login with a protected API check.</h1>
-        <p className="page-subtitle">
-          The app now keeps the original answer picker, adds Cognito Hosted UI sign-in with Google,
-          restores the session from sessionStorage, and calls <code>/me</code> with the access token.
-        </p>
-      </header>
+  function handleSportBack() {
+    setSelectedSportId("");
+    window.sessionStorage.removeItem(SPORT_STORAGE_KEY);
+  }
 
-      {authError && <p className="status-banner is-error">{authError}</p>}
+  function handleAnswer(choice) {
+    if (!selectedSport) {
+      return;
+    }
 
-      <div className="panel-grid">
-        <section className="panel">
-          <div className="panel-heading">
-            <h2>Answer selection</h2>
-            <p>The original choice buttons still download an <code>answer.json</code> file.</p>
-          </div>
+    const nextAnswers = {
+      ...answersBySport,
+      [selectedSport.id]: choice,
+    };
 
-          <div className="choice-grid">
-            <button type="button" className="choice-button" onClick={() => saveAnswer("A")}>A</button>
-            <button type="button" className="choice-button" onClick={() => saveAnswer("B")}>B</button>
-            <button type="button" className="choice-button" onClick={() => saveAnswer("C")}>C</button>
-            <button type="button" className="choice-button" onClick={() => saveAnswer("D")}>D</button>
-          </div>
+    setAnswersBySport(nextAnswers);
+    writeStoredAnswers(nextAnswers);
+    downloadAnswerFile(selectedSport.name, choice);
+  }
 
-          {answer ? (
-            <p className="status-banner is-success">Selected: {answer}</p>
-          ) : (
-            <p className="status-banner is-muted">No answer selected yet.</p>
-          )}
-
-          <p className="panel-note">The latest selection is kept in sessionStorage so it survives the Hosted UI redirect.</p>
+  if (authStatus === "loading") {
+    return (
+      <main className="login-shell">
+        <section className="login-card is-loading">
+          <div className="orb orb-one" />
+          <div className="orb orb-two" />
+          <p className="eyebrow">Sports Hub</p>
+          <h1>Checking your session…</h1>
+          <p className="login-copy">Getting your player space ready.</p>
         </section>
+      </main>
+    );
+  }
 
-        <section className="panel">
-          <div className="panel-heading">
-            <h2>Authentication</h2>
-            <p>OAuth code flow with PKCE, a Cognito Hosted UI redirect, and a Google identity provider.</p>
-          </div>
+  if (!session) {
+    return (
+      <main className="login-shell">
+        <section className="login-card">
+          <div className="orb orb-one" />
+          <div className="orb orb-two" />
+          <div className="hero-badge">Teen sports. One clean hub.</div>
+          <p className="eyebrow">Sports Hub</p>
+          <h1>Sign in to unlock your sports space.</h1>
+          <p className="login-copy">
+            Save your own context, jump between sports, and keep your choices tied to your account.
+          </p>
 
+          {authError ? <p className="status-banner is-error">{authError}</p> : null}
           {missingAuthConfig.length > 0 ? (
             <div className="callout is-warning">
               Missing auth env vars: {missingAuthConfig.join(", ")}
             </div>
           ) : null}
 
-          <div className="session-summary">
-            <span className={`state-pill ${session ? "is-success" : "is-muted"}`}>
-              {authStatus === "loading"
-                ? "Checking session"
-                : authStatus === "redirecting"
-                  ? "Redirecting to Cognito"
-                  : session
-                    ? "Signed in"
-                    : "Signed out"}
-            </span>
-
-            {session ? (
-              <>
-                <dl className="session-details">
-                  <div>
-                    <dt>Token type</dt>
-                    <dd>{session.tokenType}</dd>
-                  </div>
-                  <div>
-                    <dt>Expires</dt>
-                    <dd>{formatExpiration(session.expiresAt)}</dd>
-                  </div>
-                </dl>
-
-                <div className="button-row">
-                  <button
-                    type="button"
-                    onClick={() => void loadProfile(session.accessToken)}
-                    disabled={profileState.status === "loading"}
-                  >
-                    {profileState.status === "loading" ? "Loading /me..." : "Refresh /me"}
-                  </button>
-                  <button type="button" className="secondary-button" onClick={handleLogout}>
-                    Sign out
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="button-row">
-                <button
-                  type="button"
-                  onClick={() => void handleLogin()}
-                  disabled={missingAuthConfig.length > 0 || authStatus === "redirecting"}
-                >
-                  {authStatus === "redirecting" ? "Redirecting..." : "Sign in with Google"}
-                </button>
-              </div>
-            )}
+          <div className="button-row login-actions">
+            <button
+              type="button"
+              className="google-button"
+              onClick={() => void handleLogin()}
+              disabled={missingAuthConfig.length > 0 || authStatus === "redirecting"}
+            >
+              {authStatus === "redirecting" ? "Redirecting to Google…" : "Continue with Google"}
+            </button>
           </div>
 
-          <div className="profile-block">
-            <div className="profile-header">
-              <h3>Protected API request</h3>
-              <p>GET <code>/me</code> with <code>Authorization: Bearer &lt;access token&gt;</code>.</p>
-            </div>
-
-            {!session ? (
-              <p className="status-banner is-muted">Sign in to fetch the protected profile response.</p>
-            ) : !authConfig.apiBaseUrl ? (
-              <p className="status-banner is-muted">Set <code>VITE_API_BASE_URL</code> to enable the protected request.</p>
-            ) : profileState.status === "success" ? (
-              <pre className="json-preview">{JSON.stringify(profileState.data, null, 2)}</pre>
-            ) : profileState.status === "error" ? (
-              <p className="status-banner is-error">{profileState.error}</p>
-            ) : profileState.status === "loading" ? (
-              <p className="status-banner is-muted">Calling <code>{authConfig.apiBaseUrl}/me</code>...</p>
-            ) : (
-              <p className="status-banner is-muted">Use the signed-in session to fetch the protected profile response.</p>
-            )}
+          <div className="feature-grid">
+            <article className="feature-card">
+              <h2>Your own context</h2>
+              <p>Everything stays behind your login so your sports space feels personal from the start.</p>
+            </article>
+            <article className="feature-card">
+              <h2>Fast switch-in</h2>
+              <p>Pick your sport, make a call, and keep the flow lightweight on mobile and desktop.</p>
+            </article>
+            <article className="feature-card">
+              <h2>Fresh design</h2>
+              <p>Bright colours, clean panels, and a modern layout designed for students and young athletes.</p>
+            </article>
           </div>
         </section>
-      </div>
+      </main>
+    );
+  }
 
-      <footer className="app-footer">
-        <p>API health endpoint: {apiHealthEndpoint}</p>
-      </footer>
+  return (
+    <main className="app-shell">
+      <header className="dashboard-header">
+        <div>
+          <p className="eyebrow">Your Sports</p>
+          <h1>{selectedSport ? selectedSport.name : `Welcome back, ${displayName}.`}</h1>
+          <p className="page-subtitle">
+            {selectedSport
+              ? `Make your ${selectedSport.name.toLowerCase()} choice below. Your space stays private to your account.`
+              : "Choose a sport to jump straight into your own focused decision space."}
+          </p>
+        </div>
+
+        <div className="profile-chip">
+          <span className="profile-avatar">{displayName.charAt(0).toUpperCase()}</span>
+          <div>
+            <strong>{displayName}</strong>
+            <p>{profileState.data?.email || "Signed in with Google"}</p>
+          </div>
+          <button type="button" className="secondary-button" onClick={handleLogout}>
+            Sign out
+          </button>
+        </div>
+      </header>
+
+      {authError ? <p className="status-banner is-error">{authError}</p> : null}
+
+      {profileState.status === "error" ? (
+        <p className="status-banner is-error">{profileState.error}</p>
+      ) : null}
+
+      {!selectedSport ? (
+        <section className="sports-grid">
+          {SPORTS.map((sport) => (
+            <article key={sport.id} className={`sport-card ${sport.accent}`}>
+              <div className="sport-card-top">
+                <span className="sport-kicker">Your Sports</span>
+                <h2>{sport.name}</h2>
+                <p>{sport.description}</p>
+              </div>
+
+              <div className="sport-card-bottom">
+                <p className="sport-meta">
+                  {answersBySport[sport.id]
+                    ? `Latest choice: ${answersBySport[sport.id]}`
+                    : "No choice saved yet"}
+                </p>
+                <button type="button" onClick={() => handleSportSelect(sport.id)}>
+                  Open {sport.name}
+                </button>
+              </div>
+            </article>
+          ))}
+        </section>
+      ) : (
+        <section className={`picker-card ${selectedSport.accent}`}>
+          <div className="picker-header">
+            <div>
+              <p className="sport-kicker">{selectedSport.name}</p>
+              <h2>Make your call</h2>
+              <p>Pick the option that fits best for this sport, then download the answer file.</p>
+            </div>
+            <button type="button" className="secondary-button" onClick={handleSportBack}>
+              Back to sports
+            </button>
+          </div>
+
+          <div className="choice-grid">
+            {['A', 'B', 'C', 'D'].map((choice) => (
+              <button
+                key={choice}
+                type="button"
+                className={`choice-button ${selectedAnswer === choice ? "is-selected" : ""}`}
+                onClick={() => handleAnswer(choice)}
+              >
+                <span>{choice}</span>
+              </button>
+            ))}
+          </div>
+
+          {selectedAnswer ? (
+            <p className="status-banner is-success">Selected for {selectedSport.name}: {selectedAnswer}</p>
+          ) : (
+            <p className="status-banner is-muted">Choose A, B, C, or D to save your latest decision.</p>
+          )}
+        </section>
+      )}
     </main>
   );
 }
