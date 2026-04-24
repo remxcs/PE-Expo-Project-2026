@@ -35,6 +35,43 @@ const SPORTS = [
 
 const DEFAULT_SPORT_ID = "basketball";
 
+function decodeJwtClaims(token) {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const [, payload] = token.split(".");
+
+    if (!payload) {
+      return null;
+    }
+
+    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const json = atob(normalizedPayload);
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function isGeneratedUsername(value) {
+  return typeof value === "string" && /^Google_\d+$/.test(value);
+}
+
+function prettifyEmailName(email) {
+  if (!email || !email.includes("@")) {
+    return "";
+  }
+
+  const localPart = email.split("@")[0];
+  return localPart
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 function readStoredAnswers() {
   const rawValue = window.sessionStorage.getItem(ANSWERS_STORAGE_KEY);
 
@@ -76,17 +113,38 @@ function downloadAnswerFile(sportName, choice) {
   URL.revokeObjectURL(url);
 }
 
-function buildDisplayName(profile) {
-  if (!profile) {
-    return "Player";
+function buildDisplayName(profile, session) {
+  const sessionClaims = decodeJwtClaims(session?.idToken);
+  const fullName = profile?.name || sessionClaims?.name;
+  const joinedName = [
+    profile?.givenName || sessionClaims?.given_name,
+    profile?.familyName || sessionClaims?.family_name,
+  ].filter(Boolean).join(" ");
+  const firstName = profile?.givenName || sessionClaims?.given_name;
+  const emailName = prettifyEmailName(profile?.email || sessionClaims?.email);
+  const username = profile?.username;
+
+  if (fullName) {
+    return fullName;
   }
 
-  return profile.name
-    || [profile.givenName, profile.familyName].filter(Boolean).join(" ")
-    || profile.givenName
-    || profile.username
-    || profile.email
-    || "Player";
+  if (joinedName) {
+    return joinedName;
+  }
+
+  if (firstName) {
+    return firstName;
+  }
+
+  if (emailName) {
+    return emailName;
+  }
+
+  if (username && !isGeneratedUsername(username)) {
+    return username;
+  }
+
+  return "Athlete";
 }
 
 function getSportById(sportId) {
@@ -118,7 +176,7 @@ export default function App() {
   }
 
   const selectedSport = getSportById(selectedSportId);
-  const displayName = buildDisplayName(profileState.data);
+  const displayName = buildDisplayName(profileState.data, session);
   const selectedAnswer = selectedSport ? answersBySport[selectedSport.id] ?? null : null;
 
   const loadProfile = useCallback(async (activeSession) => {
@@ -206,7 +264,7 @@ export default function App() {
       setAuthError(result.error ?? "");
       setAuthStatus(result.session ? "signed_in" : "signed_out");
 
-      if (result.session && !window.sessionStorage.getItem(SPORT_STORAGE_KEY)) {
+      if (result.session) {
         setSelectedSportId(DEFAULT_SPORT_ID);
         window.sessionStorage.setItem(SPORT_STORAGE_KEY, DEFAULT_SPORT_ID);
       }
