@@ -84,12 +84,19 @@
 .sport-card h2 {
   margin: 0;
   letter-spacing: -0.03em;
+  color: var(--color-text);
 }
 
 .login-card h1,
 .dashboard-header h1 {
   font-size: clamp(2.8rem, 7vw, 5.2rem);
   line-height: 0.95;
+}
+
+.dashboard-header h1,
+.picker-header h2,
+.sport-card h2 {
+  text-shadow: 0 2px 10px rgba(255, 255, 255, 0.35);
 }
 
 .login-copy,
@@ -111,6 +118,7 @@
 
 .login-actions {
   margin: var(--space-5) 0 var(--space-6);
+  justify-content: center;
 }
 
 .feature-grid,
@@ -168,11 +176,17 @@
 .profile-chip strong {
   display: block;
   color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .profile-chip p {
   margin: 0.2rem 0 0;
   font-size: 0.92rem;
+  font-family: var(--font-ui);
+  font-weight: 600;
 }
 
 .profile-avatar {
@@ -238,6 +252,8 @@
 
 .sport-card h2 {
   font-size: clamp(2rem, 5vw, 3rem);
+  font-family: var(--font-ui);
+  font-weight: 800;
 }
 
 .sport-card p,
@@ -268,6 +284,8 @@
 
 .picker-header h2 {
   font-size: clamp(2rem, 5vw, 3.1rem);
+  font-family: var(--font-ui);
+  font-weight: 800;
 }
 
 .choice-grid {
@@ -284,6 +302,15 @@
   border-radius: 18px;
   font-size: 1rem;
   font-weight: 700;
+}
+
+.google-button {
+  min-width: min(100%, 21rem);
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .choice-button,
@@ -308,6 +335,9 @@
 .secondary-button {
   background: rgba(255, 255, 255, 0.72);
   color: var(--color-text);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .button-row {

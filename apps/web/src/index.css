@@ -1,6 +1,9 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap");
+
 :root {
   --font-body: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: Inter, "Segoe UI", system-ui, sans-serif;
+  --font-ui: "Plus Jakarta Sans", Inter, "Segoe UI", system-ui, sans-serif;
   --font-mono: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
   --color-page-top: #0b1022;
   --color-page-bottom: #f3f6ff;
@@ -91,7 +94,7 @@ h3,
 .hero-badge,
 .sport-kicker,
 .eyebrow {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
 }
 
 a {

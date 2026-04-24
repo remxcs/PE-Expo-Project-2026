@@ -33,6 +33,8 @@ const SPORTS = [
   },
 ];
 
+const DEFAULT_SPORT_ID = "basketball";
+
 function readStoredAnswers() {
   const rawValue = window.sessionStorage.getItem(ANSWERS_STORAGE_KEY);
 
@@ -79,7 +81,12 @@ function buildDisplayName(profile) {
     return "Player";
   }
 
-  return profile.givenName || profile.name || profile.email || "Player";
+  return profile.name
+    || [profile.givenName, profile.familyName].filter(Boolean).join(" ")
+    || profile.givenName
+    || profile.username
+    || profile.email
+    || "Player";
 }
 
 function getSportById(sportId) {
@@ -198,6 +205,11 @@ export default function App() {
       setSession(result.session);
       setAuthError(result.error ?? "");
       setAuthStatus(result.session ? "signed_in" : "signed_out");
+
+      if (result.session && !window.sessionStorage.getItem(SPORT_STORAGE_KEY)) {
+        setSelectedSportId(DEFAULT_SPORT_ID);
+        window.sessionStorage.setItem(SPORT_STORAGE_KEY, DEFAULT_SPORT_ID);
+      }
 
       if (result.session?.accessToken) {
         await loadProfile(result.session);
