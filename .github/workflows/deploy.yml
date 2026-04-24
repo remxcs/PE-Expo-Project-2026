@@ -12,6 +12,7 @@ permissions:
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION || 'eu-west-1' }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   SAM_STACK_NAME: ${{ vars.SAM_STACK_NAME || 'pe-expo-project-2026' }}
   FRONTEND_EDGE_STACK_NAME: ${{ vars.FRONTEND_EDGE_STACK_NAME || 'pe-expo-project-2026-web-edge' }}
   SAM_DEPLOY_ROLE_ARN: ${{ vars.SAM_DEPLOY_ROLE_ARN }}
@@ -31,19 +32,19 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Set up AWS SAM CLI
         uses: aws-actions/setup-sam@v2
 
       - name: Configure AWS credentials with OIDC
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.SAM_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
