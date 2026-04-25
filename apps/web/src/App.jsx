@@ -20,20 +20,82 @@ const EMPTY_PROFILE_STATE = {
 
 const SPORTS = [
   {
-    id: "waterpolo",
-    name: "Waterpolo",
-    description: "Fast decisions, strong teamwork, and game-day focus in the pool.",
-    accent: "is-waterpolo",
+    id: "swimming",
+    name: "Swimming",
+    description: "Build confidence in the water with a clear path from beginner goals to club-level progress.",
+    accent: "is-swimming",
   },
   {
-    id: "basketball",
-    name: "Basketball",
-    description: "Sharp movement, big energy, and confident calls on the court.",
-    accent: "is-basketball",
+    id: "water-polo",
+    name: "Water Polo",
+    description: "Grow your game sense, stamina, and pool skills from casual play through competitive performance.",
+    accent: "is-waterpolo",
   },
 ];
 
-const DEFAULT_SPORT_ID = "basketball";
+const DEFAULT_SPORT_ID = "swimming";
+
+const SPORT_QUESTIONS = {
+  swimming: [
+    {
+      id: "current-level",
+      prompt: "What level are you at?",
+      options: [
+        { id: "A", label: "Beginner" },
+        { id: "B", label: "Casual" },
+        { id: "C", label: "Regular" },
+      ],
+    },
+    {
+      id: "goal-level",
+      prompt: "Where do you want to get to?",
+      options: [
+        { id: "A", label: "Casual" },
+        { id: "B", label: "Regular" },
+        { id: "C", label: "Club Level" },
+      ],
+    },
+    {
+      id: "improvement-area",
+      prompt: "Any areas you want to improve?",
+      options: [
+        { id: "A", label: "No" },
+        { id: "B", label: "Stamina" },
+        { id: "C", label: "Technique" },
+        { id: "D", label: "Lactate" },
+      ],
+    },
+  ],
+  "water-polo": [
+    {
+      id: "current-level",
+      prompt: "What level are you at?",
+      options: [
+        { id: "A", label: "Beginner" },
+        { id: "B", label: "Casual" },
+        { id: "C", label: "Competitive" },
+      ],
+    },
+    {
+      id: "goal-level",
+      prompt: "Where do you want to get to?",
+      options: [
+        { id: "A", label: "Casual" },
+        { id: "B", label: "Competitive" },
+      ],
+    },
+    {
+      id: "improvement-area",
+      prompt: "Any areas you want to improve?",
+      options: [
+        { id: "A", label: "No" },
+        { id: "B", label: "Stamina" },
+        { id: "C", label: "Passing" },
+        { id: "D", label: "Shooting" },
+      ],
+    },
+  ],
+};
 
 function decodeJwtClaims(token) {
   if (!token) {
@@ -91,20 +153,20 @@ function writeStoredAnswers(value) {
   window.sessionStorage.setItem(ANSWERS_STORAGE_KEY, JSON.stringify(value));
 }
 
-function buildAnswerDownload(sportName, choice) {
+function buildAnswerDownload(sportName, answers) {
   return {
     sport: sportName,
-    answer: choice,
+    answers,
     time: new Date().toISOString(),
   };
 }
 
-function downloadAnswerFile(sportName, choice) {
-  const data = buildAnswerDownload(sportName, choice);
+function downloadAnswerFile(sportName, answers) {
+  const data = buildAnswerDownload(sportName, answers);
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: "application/json",
   });
-  const fileName = `${sportName.toLowerCase()}-answer.json`;
+  const fileName = `${sportName.toLowerCase().replace(/\s+/g, "-")}-answers.json`;
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -177,7 +239,10 @@ export default function App() {
 
   const selectedSport = getSportById(selectedSportId);
   const displayName = buildDisplayName(profileState.data, session);
-  const selectedAnswer = selectedSport ? answersBySport[selectedSport.id] ?? null : null;
+  const selectedResponses = selectedSport ? answersBySport[selectedSport.id] ?? {} : {};
+  const selectedQuestions = selectedSport ? SPORT_QUESTIONS[selectedSport.id] ?? [] : [];
+  const answeredCount = selectedQuestions.filter((question) => selectedResponses[question.id]).length;
+  const isQuestionnaireComplete = selectedQuestions.length > 0 && answeredCount === selectedQuestions.length;
 
   const loadProfile = useCallback(async (activeSession) => {
     if (!activeSession?.accessToken) {
@@ -366,19 +431,30 @@ export default function App() {
     window.sessionStorage.removeItem(SPORT_STORAGE_KEY);
   }
 
-  function handleAnswer(choice) {
+  function handleAnswer(questionId, optionId) {
     if (!selectedSport) {
       return;
     }
 
+    const currentResponses = answersBySport[selectedSport.id] ?? {};
     const nextAnswers = {
       ...answersBySport,
-      [selectedSport.id]: choice,
+      [selectedSport.id]: {
+        ...currentResponses,
+        [questionId]: optionId,
+      },
     };
 
     setAnswersBySport(nextAnswers);
     writeStoredAnswers(nextAnswers);
-    downloadAnswerFile(selectedSport.name, choice);
+  }
+
+  function handleDownloadAnswers() {
+    if (!selectedSport || !isQuestionnaireComplete) {
+      return;
+    }
+
+    downloadAnswerFile(selectedSport.name, selectedResponses);
   }
 
   if (authStatus === "loading") {
@@ -489,8 +565,8 @@ export default function App() {
               <div className="sport-card-bottom">
                 <p className="sport-meta">
                   {answersBySport[sport.id]
-                    ? `Latest choice: ${answersBySport[sport.id]}`
-                    : "No choice saved yet"}
+                    ? `${Object.keys(answersBySport[sport.id]).length} of ${(SPORT_QUESTIONS[sport.id] ?? []).length} questions answered`
+                    : "No answers saved yet"}
                 </p>
                 <button type="button" onClick={() => handleSportSelect(sport.id)}>
                   Open {sport.name}
@@ -504,31 +580,59 @@ export default function App() {
           <div className="picker-header">
             <div>
               <p className="sport-kicker">{selectedSport.name}</p>
-              <h2>Make your call</h2>
-              <p>Pick the option that fits best for this sport, then download the answer file.</p>
+              <h2>Answer your questions</h2>
+              <p>Work through each question below. Your responses save automatically for this sport.</p>
             </div>
-            <button type="button" className="secondary-button" onClick={handleSportBack}>
-              Back to sports
-            </button>
+            <div className="button-row">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={handleDownloadAnswers}
+                disabled={!isQuestionnaireComplete}
+              >
+                Download answers
+              </button>
+              <button type="button" className="secondary-button" onClick={handleSportBack}>
+                Back to sports
+              </button>
+            </div>
           </div>
 
-          <div className="choice-grid">
-            {['A', 'B', 'C', 'D'].map((choice) => (
-              <button
-                key={choice}
-                type="button"
-                className={`choice-button ${selectedAnswer === choice ? "is-selected" : ""}`}
-                onClick={() => handleAnswer(choice)}
-              >
-                <span>{choice}</span>
-              </button>
+          <div className="question-list">
+            {selectedQuestions.map((question, index) => (
+              <section key={question.id} className="question-card">
+                <p className="question-number">Q{index + 1}</p>
+                <h3>{question.prompt}</h3>
+
+                <div className="choice-grid">
+                  {question.options.map((option) => {
+                    const isSelected = selectedResponses[question.id] === option.id;
+
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={`choice-button ${isSelected ? "is-selected" : ""}`}
+                        onClick={() => handleAnswer(question.id, option.id)}
+                      >
+                        <span>{option.id}</span>
+                        <strong>{option.label}</strong>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
             ))}
           </div>
 
-          {selectedAnswer ? (
-            <p className="status-banner is-success">Selected for {selectedSport.name}: {selectedAnswer}</p>
+          {isQuestionnaireComplete ? (
+            <p className="status-banner is-success">
+              All questions answered for {selectedSport.name}. You can download the saved answers now.
+            </p>
           ) : (
-            <p className="status-banner is-muted">Choose A, B, C, or D to save your latest decision.</p>
+            <p className="status-banner is-muted">
+              {answeredCount} of {selectedQuestions.length} questions answered so far.
+            </p>
           )}
         </section>
       )}

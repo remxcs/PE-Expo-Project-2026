@@ -229,14 +229,14 @@
   opacity: 0.22;
 }
 
+.sport-card.is-swimming::before,
+.picker-card.is-swimming::before {
+  background: radial-gradient(circle, #3d9dff 0%, transparent 70%);
+}
+
 .sport-card.is-waterpolo::before,
 .picker-card.is-waterpolo::before {
   background: radial-gradient(circle, #00d8ff 0%, transparent 70%);
-}
-
-.sport-card.is-basketball::before,
-.picker-card.is-basketball::before {
-  background: radial-gradient(circle, #ff9a3d 0%, transparent 70%);
 }
 
 .sport-card-top,
@@ -291,6 +291,35 @@
   font-weight: 800;
 }
 
+.question-list {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.question-card {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.question-number {
+  margin: 0 0 0.65rem;
+  color: var(--color-brand-cyan);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.question-card h3 {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text);
+  font-size: 1.35rem;
+  font-family: var(--font-ui);
+  font-weight: 800;
+}
+
 .choice-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -301,7 +330,7 @@
 .button-row button,
 .google-button {
   min-height: 3.4rem;
-  padding: 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
   border-radius: 18px;
   font-size: 1rem;
   font-weight: 700;
@@ -330,9 +359,23 @@
   box-shadow: 0 0 0 5px rgba(67, 89, 255, 0.28);
 }
 
+.choice-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.35rem;
+  text-align: left;
+}
+
 .choice-button span {
-  font-size: clamp(1.9rem, 7vw, 3rem);
+  font-size: clamp(1.5rem, 5vw, 2.2rem);
   letter-spacing: -0.04em;
+}
+
+.choice-button strong {
+  font-size: 1rem;
+  line-height: 1.35;
 }
 
 .secondary-button {
@@ -341,6 +384,11 @@
   font-family: var(--font-ui);
   font-weight: 700;
   letter-spacing: -0.01em;
+}
+
+.secondary-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .button-row {
