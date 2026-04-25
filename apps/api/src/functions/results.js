@@ -8,7 +8,7 @@ const jsonHeaders = {
   "content-type": "application/json"
 };
 
-const QUESTIONNAIRE_ATTRIBUTE = "custom:questionnaire_results";
+const QUESTIONNAIRE_ATTRIBUTE = "profile";
 const userPoolId = process.env.USER_POOL_ID;
 const cognitoClient = new CognitoIdentityProviderClient({});
 

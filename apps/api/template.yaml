@@ -79,12 +79,6 @@ Resources:
           AttributeDataType: String
           Mutable: true
           Required: true
-        - Name: questionnaire_results
-          AttributeDataType: String
-          Mutable: true
-          Required: false
-          StringAttributeConstraints:
-            MaxLength: '2048'
 
   UserPoolGoogleIdentityProvider:
     Type: AWS::Cognito::UserPoolIdentityProvider
