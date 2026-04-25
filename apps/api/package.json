@@ -6,5 +6,9 @@
   "scripts": {
     "build": "sam build --template-file template.yaml",
     "validate": "sam validate --template-file template.yaml"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1037.0",
+    "@aws-sdk/lib-dynamodb": "^3.1037.0"
   }
 }

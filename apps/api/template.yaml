@@ -49,6 +49,7 @@ Resources:
           Ref: WebAllowedOrigins
         AllowMethods:
           - GET
+          - PUT
           - OPTIONS
         AllowHeaders:
           - Authorization
@@ -212,6 +213,51 @@ Resources:
               Ref: ApiGateway
             Path: /me
             Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  ResultsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+
+  ResultsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/functions/
+      Handler: results.handler
+      Description: Stores and returns questionnaire results for the current authenticated user.
+      Environment:
+        Variables:
+          RESULTS_TABLE_NAME:
+            Ref: ResultsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName:
+              Ref: ResultsTable
+      Events:
+        ResultsGetRoute:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ApiGateway
+            Path: /results
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+        ResultsPutRoute:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ApiGateway
+            Path: /results
+            Method: PUT
             Auth:
               Authorizer: CognitoAuthorizer
 
