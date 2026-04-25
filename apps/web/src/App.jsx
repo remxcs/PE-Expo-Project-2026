@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import {
   clearStoredSession,
+  fetchQuestionnaireResults,
   fetchProtectedProfile,
   getActiveSession,
   getAuthConfig,
   initializeAuth,
+  saveQuestionnaireResults,
   signInWithGoogle,
   signOut,
 } from "./auth";
@@ -16,6 +18,12 @@ const EMPTY_PROFILE_STATE = {
   status: "idle",
   data: null,
   error: "",
+};
+
+const EMPTY_RESULTS_STATE = {
+  status: "idle",
+  error: "",
+  updatedAt: null,
 };
 
 const SPORTS = [
@@ -153,28 +161,6 @@ function writeStoredAnswers(value) {
   window.sessionStorage.setItem(ANSWERS_STORAGE_KEY, JSON.stringify(value));
 }
 
-function buildAnswerDownload(sportName, answers) {
-  return {
-    sport: sportName,
-    answers,
-    time: new Date().toISOString(),
-  };
-}
-
-function downloadAnswerFile(sportName, answers) {
-  const data = buildAnswerDownload(sportName, answers);
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json",
-  });
-  const fileName = `${sportName.toLowerCase().replace(/\s+/g, "-")}-answers.json`;
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
 function buildDisplayName(profile, session) {
   const sessionClaims = decodeJwtClaims(session?.idToken);
   const fullName = profile?.name || sessionClaims?.name;
@@ -227,6 +213,7 @@ export default function App() {
   const [selectedSportId, setSelectedSportId] = useState(() => window.sessionStorage.getItem(SPORT_STORAGE_KEY) || "");
   const [answersBySport, setAnswersBySport] = useState(() => readStoredAnswers());
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+  const [resultsState, setResultsState] = useState(EMPTY_RESULTS_STATE);
 
   const missingAuthConfig = [];
 
@@ -262,11 +249,12 @@ export default function App() {
       return activeSession;
     }
 
-    setProfileState({
-      status: "loading",
-      data: null,
-      error: "",
-    });
+      setProfileState({
+        status: "loading",
+        data: null,
+        error: "",
+      });
+      setResultsState(EMPTY_RESULTS_STATE);
 
     try {
       const nextSession = await getActiveSession();
@@ -289,6 +277,25 @@ export default function App() {
 
       const profile = await fetchProtectedProfile(nextSession.accessToken);
 
+      try {
+        const results = await fetchQuestionnaireResults(nextSession.accessToken);
+        const nextAnswers = results?.answersBySport ?? {};
+
+        setAnswersBySport(nextAnswers);
+        writeStoredAnswers(nextAnswers);
+        setResultsState({
+          status: "success",
+          error: "",
+          updatedAt: results?.updatedAt ?? null,
+        });
+      } catch (error) {
+        setResultsState({
+          status: "error",
+          error: error instanceof Error ? error.message : "Unable to load your saved questionnaire results.",
+          updatedAt: null,
+        });
+      }
+
       setProfileState({
         status: "success",
         data: profile,
@@ -304,6 +311,7 @@ export default function App() {
         setAuthStatus("signed_out");
         setSelectedSportId("");
         setAnswersBySport({});
+        setResultsState(EMPTY_RESULTS_STATE);
         setAuthError("Your session expired and could not be refreshed. Sign in again to continue.");
       }
 
@@ -375,6 +383,7 @@ export default function App() {
             setAuthStatus("signed_out");
             setSelectedSportId("");
             setAnswersBySport({});
+            setResultsState(EMPTY_RESULTS_STATE);
             setAuthError("Your session expired and could not be refreshed. Sign in again to continue.");
             setProfileState(EMPTY_PROFILE_STATE);
             return;
@@ -391,6 +400,7 @@ export default function App() {
           setAuthStatus("signed_out");
           setSelectedSportId("");
           setAnswersBySport({});
+          setResultsState(EMPTY_RESULTS_STATE);
           setAuthError("Your session expired and could not be refreshed. Sign in again to continue.");
           setProfileState(EMPTY_PROFILE_STATE);
         });
@@ -428,6 +438,7 @@ export default function App() {
     setProfileState(EMPTY_PROFILE_STATE);
     setSelectedSportId("");
     setAnswersBySport({});
+    setResultsState(EMPTY_RESULTS_STATE);
     clearLocalSportState();
     signOut();
   }
@@ -449,7 +460,7 @@ export default function App() {
     window.sessionStorage.removeItem(SPORT_STORAGE_KEY);
   }
 
-  function handleAnswer(questionId, optionId) {
+  async function handleAnswer(questionId, optionId) {
     if (!selectedSport) {
       return;
     }
@@ -465,6 +476,11 @@ export default function App() {
 
     setAnswersBySport(nextAnswers);
     writeStoredAnswers(nextAnswers);
+    setResultsState((currentState) => ({
+      ...currentState,
+      status: "saving",
+      error: "",
+    }));
 
     const answeredQuestionIndex = selectedQuestions.findIndex((question) => question.id === questionId);
     const nextQuestionIndex = answeredQuestionIndex + 1;
@@ -472,14 +488,22 @@ export default function App() {
     if (nextQuestionIndex < selectedQuestions.length) {
       setActiveQuestionIndex(nextQuestionIndex);
     }
-  }
 
-  function handleDownloadAnswers() {
-    if (!selectedSport || !isQuestionnaireComplete) {
-      return;
+    try {
+      const savedResults = await saveQuestionnaireResults(nextAnswers);
+      writeStoredAnswers(savedResults?.answersBySport ?? nextAnswers);
+      setResultsState({
+        status: "success",
+        error: "",
+        updatedAt: savedResults?.updatedAt ?? new Date().toISOString(),
+      });
+    } catch (error) {
+      setResultsState({
+        status: "error",
+        error: error instanceof Error ? error.message : "Unable to save your answers right now.",
+        updatedAt: null,
+      });
     }
-
-    downloadAnswerFile(selectedSport.name, selectedResponses);
   }
 
   function handlePreviousQuestion() {
@@ -617,14 +641,6 @@ export default function App() {
               <p>Answer one question at a time. Your responses save automatically as you move through the flow.</p>
             </div>
             <div className="button-row">
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={handleDownloadAnswers}
-                disabled={!isQuestionnaireComplete}
-              >
-                Download answers
-              </button>
               <button type="button" className="secondary-button" onClick={handleSportBack}>
                 Back to sports
               </button>
@@ -647,7 +663,7 @@ export default function App() {
                       key={option.id}
                       type="button"
                       className={`choice-button ${isSelected ? "is-selected" : ""}`}
-                      onClick={() => handleAnswer(currentQuestion.id, option.id)}
+                      onClick={() => void handleAnswer(currentQuestion.id, option.id)}
                     >
                       <span>{option.id}</span>
                       <strong>{option.label}</strong>
@@ -679,13 +695,27 @@ export default function App() {
 
           {isQuestionnaireComplete ? (
             <p className="status-banner is-success">
-              All questions answered for {selectedSport.name}. You can download the saved answers now.
+              All questions answered for {selectedSport.name}. Your results are saved to your account.
             </p>
           ) : (
             <p className="status-banner is-muted">
               {answeredCount} of {selectedQuestions.length} questions answered so far.
             </p>
           )}
+
+          {resultsState.status === "saving" ? (
+            <p className="status-banner is-muted">Saving your latest answer…</p>
+          ) : null}
+
+          {resultsState.status === "success" && resultsState.updatedAt ? (
+            <p className="status-banner is-success">
+              Saved to your account at {new Date(resultsState.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.
+            </p>
+          ) : null}
+
+          {resultsState.status === "error" ? (
+            <p className="status-banner is-error">{resultsState.error}</p>
+          ) : null}
 
           <div className="progress-dock">
             <p className="progress-label">

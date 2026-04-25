@@ -354,22 +354,27 @@ export function signOut() {
   window.location.assign(logoutEndpoint.toString());
 }
 
-export async function fetchProtectedProfile(accessToken) {
+async function fetchProtectedJson(path, { accessToken, method = "GET", body } = {}) {
   const { apiBaseUrl } = getAuthConfig();
 
   if (!apiBaseUrl) {
-    throw new Error("Set VITE_API_BASE_URL to call the protected /me endpoint.");
+    throw new Error("Set VITE_API_BASE_URL to call the protected API.");
   }
 
-  if (!accessToken) {
+  const session = accessToken ? { accessToken } : await getActiveSession();
+
+  if (!session?.accessToken) {
     throw new Error("No access token is available for the protected request.");
   }
 
-  const profileEndpoint = new URL("me", ensureTrailingSlash(apiBaseUrl));
-  const response = await fetch(profileEndpoint.toString(), {
+  const endpoint = new URL(path, ensureTrailingSlash(apiBaseUrl));
+  const response = await fetch(endpoint.toString(), {
+    method,
     headers: {
-      Authorization: `Bearer ${accessToken}`,
+      Authorization: `Bearer ${session.accessToken}`,
+      ...(body ? { "Content-Type": "application/json" } : {}),
     },
+    ...(body ? { body: JSON.stringify(body) } : {}),
   });
 
   const payload = await parseResponse(response);
@@ -386,4 +391,22 @@ export async function fetchProtectedProfile(accessToken) {
   }
 
   return payload;
+}
+
+export async function fetchProtectedProfile(accessToken) {
+  return fetchProtectedJson("me", { accessToken });
+}
+
+export async function fetchQuestionnaireResults(accessToken) {
+  return fetchProtectedJson("results", { accessToken });
+}
+
+export async function saveQuestionnaireResults(answersBySport, accessToken) {
+  return fetchProtectedJson("results", {
+    accessToken,
+    method: "PUT",
+    body: {
+      answersBySport,
+    },
+  });
 }
