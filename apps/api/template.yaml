@@ -79,6 +79,12 @@ Resources:
           AttributeDataType: String
           Mutable: true
           Required: true
+        - Name: questionnaire_results
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+          StringAttributeConstraints:
+            MaxLength: '2048'
 
   UserPoolGoogleIdentityProvider:
     Type: AWS::Cognito::UserPoolIdentityProvider
@@ -216,17 +222,6 @@ Resources:
             Auth:
               Authorizer: CognitoAuthorizer
 
-  ResultsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: userId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: userId
-          KeyType: HASH
-
   ResultsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -235,12 +230,18 @@ Resources:
       Description: Stores and returns questionnaire results for the current authenticated user.
       Environment:
         Variables:
-          RESULTS_TABLE_NAME:
-            Ref: ResultsTable
+          USER_POOL_ID:
+            Ref: UserPool
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName:
-              Ref: ResultsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminGetUser
+                - cognito-idp:AdminUpdateUserAttributes
+              Resource:
+                Fn::GetAtt:
+                  - UserPool
+                  - Arn
       Events:
         ResultsGetRoute:
           Type: HttpApi

@@ -1,12 +1,16 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, GetCommand, UpdateCommand } = require("@aws-sdk/lib-dynamodb");
+const {
+  AdminGetUserCommand,
+  AdminUpdateUserAttributesCommand,
+  CognitoIdentityProviderClient
+} = require("@aws-sdk/client-cognito-identity-provider");
 
 const jsonHeaders = {
   "content-type": "application/json"
 };
 
-const tableName = process.env.RESULTS_TABLE_NAME;
-const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const QUESTIONNAIRE_ATTRIBUTE = "custom:questionnaire_results";
+const userPoolId = process.env.USER_POOL_ID;
+const cognitoClient = new CognitoIdentityProviderClient({});
 
 function createResponse(statusCode, body) {
   return {
@@ -16,8 +20,9 @@ function createResponse(statusCode, body) {
   };
 }
 
-function getUserId(event) {
-  return event?.requestContext?.authorizer?.jwt?.claims?.sub ?? null;
+function getUsername(event) {
+  const claims = event?.requestContext?.authorizer?.jwt?.claims;
+  return claims?.["cognito:username"] ?? claims?.username ?? claims?.sub ?? null;
 }
 
 function isPlainObject(value) {
@@ -55,6 +60,31 @@ function sanitizeAnswersBySport(value) {
   }, {});
 }
 
+function parseStoredResults(attributeValue) {
+  if (!attributeValue) {
+    return {
+      answersBySport: {},
+      updatedAt: null,
+      createdAt: null
+    };
+  }
+
+  try {
+      const parsedValue = JSON.parse(attributeValue);
+      return {
+        answersBySport: sanitizeAnswersBySport(parsedValue.answersBySport ?? {}),
+        updatedAt: typeof parsedValue.updatedAt === "string" ? parsedValue.updatedAt : null,
+        createdAt: typeof parsedValue.createdAt === "string" ? parsedValue.createdAt : null
+      };
+  } catch {
+    return {
+      answersBySport: {},
+      updatedAt: null,
+      createdAt: null
+    };
+  }
+}
+
 function parseRequestBody(event) {
   if (!event?.body) {
     throw new Error("Request body is required.");
@@ -73,56 +103,66 @@ function parseRequestBody(event) {
   };
 }
 
-async function handleGet(userId) {
-  const response = await dynamoClient.send(new GetCommand({
-    TableName: tableName,
-    Key: {
-      userId
-    }
-  }));
-
-  return createResponse(200, {
-    answersBySport: response.Item?.answersBySport ?? {},
-    updatedAt: response.Item?.updatedAt ?? null,
-    createdAt: response.Item?.createdAt ?? null
-  });
+function getAttributeValue(userAttributes, attributeName) {
+  return userAttributes?.find((attribute) => attribute.Name === attributeName)?.Value ?? "";
 }
 
-async function handlePut(userId, event) {
-  const { answersBySport } = parseRequestBody(event);
-  const now = new Date().toISOString();
+async function handleGet(username) {
+  const response = await cognitoClient.send(new AdminGetUserCommand({
+    UserPoolId: userPoolId,
+    Username: username
+  }));
 
-  const response = await dynamoClient.send(new UpdateCommand({
-    TableName: tableName,
-    Key: {
-      userId
-    },
-    UpdateExpression: "SET answersBySport = :answersBySport, updatedAt = :updatedAt, createdAt = if_not_exists(createdAt, :createdAt)",
-    ExpressionAttributeValues: {
-      ":answersBySport": answersBySport,
-      ":updatedAt": now,
-      ":createdAt": now
-    },
-    ReturnValues: "ALL_NEW"
+  const storedResults = parseStoredResults(getAttributeValue(response.UserAttributes, QUESTIONNAIRE_ATTRIBUTE));
+
+  return createResponse(200, storedResults);
+}
+
+async function handlePut(username, event) {
+  const { answersBySport } = parseRequestBody(event);
+  const existingResults = await handleGet(username);
+  const existingPayload = JSON.parse(existingResults.body);
+  const updatedAt = new Date().toISOString();
+  const storedValue = JSON.stringify({
+    answersBySport,
+    updatedAt,
+    createdAt: existingPayload.createdAt ?? updatedAt
+  });
+
+  if (storedValue.length > 2048) {
+    return createResponse(413, {
+      message: "Questionnaire results are too large to store in the current Cognito attribute."
+    });
+  }
+
+  await cognitoClient.send(new AdminUpdateUserAttributesCommand({
+    UserPoolId: userPoolId,
+    Username: username,
+    UserAttributes: [
+      {
+        Name: QUESTIONNAIRE_ATTRIBUTE,
+        Value: storedValue
+      }
+    ]
   }));
 
   return createResponse(200, {
-    answersBySport: response.Attributes?.answersBySport ?? {},
-    updatedAt: response.Attributes?.updatedAt ?? now,
-    createdAt: response.Attributes?.createdAt ?? now
+    answersBySport,
+    updatedAt,
+    createdAt: existingPayload.createdAt ?? updatedAt
   });
 }
 
 exports.handler = async (event) => {
-  if (!tableName) {
+  if (!userPoolId) {
     return createResponse(500, {
-      message: "RESULTS_TABLE_NAME is not configured."
+      message: "USER_POOL_ID is not configured."
     });
   }
 
-  const userId = getUserId(event);
+  const username = getUsername(event);
 
-  if (!userId) {
+  if (!username) {
     return createResponse(401, {
       message: "Unauthorized"
     });
@@ -130,24 +170,18 @@ exports.handler = async (event) => {
 
   try {
     if (event?.requestContext?.http?.method === "GET") {
-      return await handleGet(userId);
+      return await handleGet(username);
     }
 
     if (event?.requestContext?.http?.method === "PUT") {
-      return await handlePut(userId, event);
+      return await handlePut(username, event);
     }
 
     return createResponse(405, {
       message: "Method not allowed"
     });
   } catch (error) {
-    if (error instanceof Error && error.message.includes("Request body")) {
-      return createResponse(400, {
-        message: error.message
-      });
-    }
-
-    if (error instanceof Error && error.message.includes("must be")) {
+    if (error instanceof Error && (error.message.includes("Request body") || error.message.includes("must be"))) {
       return createResponse(400, {
         message: error.message
       });
