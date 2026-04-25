@@ -226,6 +226,7 @@ export default function App() {
   const [profileState, setProfileState] = useState(EMPTY_PROFILE_STATE);
   const [selectedSportId, setSelectedSportId] = useState(() => window.sessionStorage.getItem(SPORT_STORAGE_KEY) || "");
   const [answersBySport, setAnswersBySport] = useState(() => readStoredAnswers());
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
 
   const missingAuthConfig = [];
 
@@ -243,6 +244,8 @@ export default function App() {
   const selectedQuestions = selectedSport ? SPORT_QUESTIONS[selectedSport.id] ?? [] : [];
   const answeredCount = selectedQuestions.filter((question) => selectedResponses[question.id]).length;
   const isQuestionnaireComplete = selectedQuestions.length > 0 && answeredCount === selectedQuestions.length;
+  const progressPercentage = selectedQuestions.length > 0 ? (answeredCount / selectedQuestions.length) * 100 : 0;
+  const currentQuestion = selectedQuestions[activeQuestionIndex] ?? null;
 
   const loadProfile = useCallback(async (activeSession) => {
     if (!activeSession?.accessToken) {
@@ -398,6 +401,14 @@ export default function App() {
     };
   }, [session]);
 
+  useEffect(() => {
+    if (!selectedQuestions.length) {
+      return;
+    }
+
+    setActiveQuestionIndex((currentIndex) => Math.min(currentIndex, selectedQuestions.length - 1));
+  }, [selectedQuestions.length]);
+
   async function handleLogin() {
     setAuthError("");
     setAuthStatus("redirecting");
@@ -422,12 +433,19 @@ export default function App() {
   }
 
   function handleSportSelect(sportId) {
+    const sportQuestions = SPORT_QUESTIONS[sportId] ?? [];
+    const storedResponses = answersBySport[sportId] ?? {};
+    const firstUnansweredIndex = sportQuestions.findIndex((question) => !storedResponses[question.id]);
+    const nextIndex = firstUnansweredIndex === -1 ? Math.max(sportQuestions.length - 1, 0) : firstUnansweredIndex;
+
     setSelectedSportId(sportId);
+    setActiveQuestionIndex(nextIndex);
     window.sessionStorage.setItem(SPORT_STORAGE_KEY, sportId);
   }
 
   function handleSportBack() {
     setSelectedSportId("");
+    setActiveQuestionIndex(0);
     window.sessionStorage.removeItem(SPORT_STORAGE_KEY);
   }
 
@@ -447,6 +465,13 @@ export default function App() {
 
     setAnswersBySport(nextAnswers);
     writeStoredAnswers(nextAnswers);
+
+    const answeredQuestionIndex = selectedQuestions.findIndex((question) => question.id === questionId);
+    const nextQuestionIndex = answeredQuestionIndex + 1;
+
+    if (nextQuestionIndex < selectedQuestions.length) {
+      setActiveQuestionIndex(nextQuestionIndex);
+    }
   }
 
   function handleDownloadAnswers() {
@@ -455,6 +480,14 @@ export default function App() {
     }
 
     downloadAnswerFile(selectedSport.name, selectedResponses);
+  }
+
+  function handlePreviousQuestion() {
+    setActiveQuestionIndex((currentIndex) => Math.max(currentIndex - 1, 0));
+  }
+
+  function handleNextQuestion() {
+    setActiveQuestionIndex((currentIndex) => Math.min(currentIndex + 1, selectedQuestions.length - 1));
   }
 
   if (authStatus === "loading") {
@@ -581,7 +614,7 @@ export default function App() {
             <div>
               <p className="sport-kicker">{selectedSport.name}</p>
               <h2>Answer your questions</h2>
-              <p>Work through each question below. Your responses save automatically for this sport.</p>
+              <p>Answer one question at a time. Your responses save automatically as you move through the flow.</p>
             </div>
             <div className="button-row">
               <button
@@ -598,32 +631,51 @@ export default function App() {
             </div>
           </div>
 
-          <div className="question-list">
-            {selectedQuestions.map((question, index) => (
-              <section key={question.id} className="question-card">
-                <p className="question-number">Q{index + 1}</p>
-                <h3>{question.prompt}</h3>
+          {currentQuestion ? (
+            <section className="question-card">
+              <p className="question-number">
+                Q{activeQuestionIndex + 1} of {selectedQuestions.length}
+              </p>
+              <h3>{currentQuestion.prompt}</h3>
 
-                <div className="choice-grid">
-                  {question.options.map((option) => {
-                    const isSelected = selectedResponses[question.id] === option.id;
+              <div className="choice-grid">
+                {currentQuestion.options.map((option) => {
+                  const isSelected = selectedResponses[currentQuestion.id] === option.id;
 
-                    return (
-                      <button
-                        key={option.id}
-                        type="button"
-                        className={`choice-button ${isSelected ? "is-selected" : ""}`}
-                        onClick={() => handleAnswer(question.id, option.id)}
-                      >
-                        <span>{option.id}</span>
-                        <strong>{option.label}</strong>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
-          </div>
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={`choice-button ${isSelected ? "is-selected" : ""}`}
+                      onClick={() => handleAnswer(currentQuestion.id, option.id)}
+                    >
+                      <span>{option.id}</span>
+                      <strong>{option.label}</strong>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="question-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handlePreviousQuestion}
+                  disabled={activeQuestionIndex === 0}
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handleNextQuestion}
+                  disabled={activeQuestionIndex === selectedQuestions.length - 1}
+                >
+                  Next
+                </button>
+              </div>
+            </section>
+          ) : null}
 
           {isQuestionnaireComplete ? (
             <p className="status-banner is-success">
@@ -634,6 +686,15 @@ export default function App() {
               {answeredCount} of {selectedQuestions.length} questions answered so far.
             </p>
           )}
+
+          <div className="progress-dock">
+            <p className="progress-label">
+              Progress: {answeredCount}/{selectedQuestions.length}
+            </p>
+            <div className="progress-track" aria-hidden="true">
+              <span className="progress-fill" style={{ width: `${progressPercentage}%` }} />
+            </div>
+          </div>
         </section>
       )}
     </main>
