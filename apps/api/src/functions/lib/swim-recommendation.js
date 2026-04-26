@@ -50,6 +50,16 @@ const RECOMMENDATION_SCHEMA = {
 const MAX_RETRY_FEEDBACK_LENGTH = 500;
 const MAX_TEXT_FIELD_LENGTH = 280;
 const MAX_NOTE_LENGTH = 200;
+const MAX_PRIOR_SESSION_COUNT = 5;
+const MAX_BEDROCK_ATTEMPTS = 2;
+
+function sanitizePromptText(value, maxLength = MAX_TEXT_FIELD_LENGTH) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim().slice(0, maxLength);
+}
 
 function normalizeAnswerLabel(questionId, answerId) {
   return SWIMMING_QUESTION_OPTIONS[questionId]?.[answerId] ?? answerId;
@@ -158,7 +168,7 @@ function shortlistSwimSets(swimmingAnswers, sessions) {
 }
 
 function summarizeRecentSessions(sessions) {
-  return sessions.slice(0, 5).map((session) => ({
+  return sessions.slice(0, MAX_PRIOR_SESSION_COUNT).map((session) => ({
     sessionId: session.sessionId,
     acceptedAt: session.acceptedAt,
     status: session.status,
@@ -166,24 +176,52 @@ function summarizeRecentSessions(sessions) {
     focus: session.recommendation?.focus ?? "general",
     totalDistance: session.recommendation?.totalDistance ?? null,
     variationNote: session.recommendation?.variationNote ?? "",
-    feedbackText: session.feedbackText ?? ""
+    feedbackText: sanitizePromptText(session.feedbackText, MAX_RETRY_FEEDBACK_LENGTH),
+    setIds: session.recommendation?.sets?.map((set) => set.id).filter(Boolean) ?? [],
+    questionnaireSnapshot: session.questionnaireSnapshot ? summarizeAnswers(session.questionnaireSnapshot) : null
   }));
 }
 
-async function invokeBedrockRecommendation({ modelId, answerSummary, candidates, priorSessions, retryFeedback }) {
-  const systemPrompt = [
-    "You are an expert youth swimming coach.",
-    "Build one suitable swim session from the candidate library entries provided.",
-    "Choose 2 to 5 candidate set IDs only from the shortlist.",
-    "Keep the recommendation safe, progressive, varied from recent sessions, and aligned to the swimmer's level and goals.",
-    "Return valid JSON only that matches the required schema and do not wrap it in markdown."
-  ].join(" ");
+function deriveFeedbackSignals(priorSessions) {
+  const positiveSignals = [];
+  const negativeSignals = [];
+  const avoidSetIds = new Set();
 
-  const userPrompt = JSON.stringify({
+  for (const session of priorSessions) {
+    const signal = {
+      title: sanitizePromptText(session.title),
+      focus: sanitizePromptText(session.focus, 80),
+      totalDistance: session.totalDistance ?? null,
+      feedbackText: sanitizePromptText(session.feedbackText, MAX_RETRY_FEEDBACK_LENGTH),
+      setIds: Array.isArray(session.setIds) ? session.setIds.filter(Boolean) : []
+    };
+
+    if (session.status === "completed" && signal.feedbackText) {
+      positiveSignals.push(signal);
+    }
+
+    if (session.status === "skipped") {
+      negativeSignals.push(signal);
+      for (const setId of signal.setIds) {
+        avoidSetIds.add(setId);
+      }
+    }
+  }
+
+  return {
+    positiveSignals,
+    negativeSignals,
+    avoidSetIds: [...avoidSetIds]
+  };
+}
+
+function buildRecommendationRequest({ answerSummary, candidates, priorSessions, retryFeedback, previousValidationError, previousInvalidResponse }) {
+  return {
     responseSchema: RECOMMENDATION_SCHEMA,
     swimmerProfile: answerSummary,
-    retryFeedback: (retryFeedback || "").slice(0, MAX_RETRY_FEEDBACK_LENGTH),
+    retryFeedback: sanitizePromptText(retryFeedback, MAX_RETRY_FEEDBACK_LENGTH),
     priorSessions,
+    feedbackSignals: deriveFeedbackSignals(priorSessions),
     candidateSets: candidates.map((candidate) => ({
       id: candidate.id,
       text: candidate.text,
@@ -194,8 +232,45 @@ async function invokeBedrockRecommendation({ modelId, answerSummary, candidates,
       equipment: candidate.equipment,
       strokes: candidate.strokes,
       rest: candidate.rest
-    }))
-  });
+    })),
+    ...(previousValidationError ? { previousValidationError: sanitizePromptText(previousValidationError, 400) } : {}),
+    ...(previousInvalidResponse ? { previousInvalidResponse: sanitizePromptText(previousInvalidResponse, 500) } : {})
+  };
+}
+
+function parseRecommendationResponse(responseText) {
+  const trimmedResponse = responseText.trim();
+  const withoutCodeFence = trimmedResponse
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
+
+  return JSON.parse(withoutCodeFence);
+}
+
+async function invokeBedrockRecommendation({ modelId, answerSummary, candidates, priorSessions, retryFeedback, previousValidationError, previousInvalidResponse }) {
+  const systemPrompt = [
+    "You are an expert youth swimming coach.",
+    "Build one suitable swim session from the candidate library entries provided.",
+    "Use the swimmer profile as the primary constraint for level, goal, and improvement area.",
+    "Use retry feedback as the strongest immediate instruction for the next suggestion.",
+    "Use prior completed and skipped sessions plus their feedback to improve future suggestions.",
+    "Avoid repeating candidate set IDs that appear in negative or skipped feedback unless the retry feedback explicitly asks for them.",
+    "Choose 2 to 5 candidate set IDs only from the shortlist.",
+    "Keep the recommendation safe, progressive, varied from recent sessions, and aligned to the swimmer's level and goals.",
+    "Do not invent new set IDs, distances, or drills outside the shortlist.",
+    "Return valid JSON only that matches the required schema and do not wrap it in markdown."
+  ].join(" ");
+
+  const userPrompt = JSON.stringify(buildRecommendationRequest({
+    answerSummary,
+    candidates,
+    priorSessions,
+    retryFeedback,
+    previousValidationError,
+    previousInvalidResponse
+  }));
 
   const response = await bedrockClient.send(new ConverseCommand({
     modelId,
@@ -219,7 +294,7 @@ async function invokeBedrockRecommendation({ modelId, answerSummary, candidates,
     throw new Error("Bedrock returned an empty recommendation.");
   }
 
-  return JSON.parse(responseText);
+  return parseRecommendationResponse(responseText);
 }
 
 function validateRecommendationPayload(payload, candidateSetMap) {
@@ -283,15 +358,43 @@ async function buildSwimmingRecommendation({ modelId, swimmingAnswers, sessions,
   const answerSummary = summarizeAnswers(swimmingAnswers);
   const shortlistedSets = shortlistSwimSets(swimmingAnswers, sessions);
   const recentSessions = summarizeRecentSessions(sessions);
-  const llmRecommendation = await invokeBedrockRecommendation({
-    modelId,
-    answerSummary,
-    candidates: shortlistedSets,
-    priorSessions: recentSessions,
-    retryFeedback
-  });
   const selectedSetMap = new Map(shortlistedSets.map((set) => [set.id, set]));
-  const validatedRecommendation = validateRecommendationPayload(llmRecommendation, selectedSetMap);
+  let previousError = "";
+  let previousInvalidResponse = "";
+  let validatedRecommendation = null;
+
+  for (let attempt = 0; attempt < MAX_BEDROCK_ATTEMPTS; attempt += 1) {
+    try {
+      const llmRecommendation = await invokeBedrockRecommendation({
+        modelId,
+        answerSummary,
+        candidates: shortlistedSets,
+        priorSessions: recentSessions,
+        retryFeedback,
+        previousValidationError: previousError,
+        previousInvalidResponse
+      });
+      validatedRecommendation = validateRecommendationPayload(llmRecommendation, selectedSetMap);
+      break;
+    } catch (error) {
+      if (!(error instanceof Error)) {
+        throw error;
+      }
+
+      previousError = error.message;
+
+      if (attempt === MAX_BEDROCK_ATTEMPTS - 1) {
+        throw error;
+      }
+
+      previousInvalidResponse = error.message;
+    }
+  }
+
+  if (!validatedRecommendation) {
+    throw new Error("Unable to build a valid swimming recommendation.");
+  }
+
   const selectedSets = validatedRecommendation.selectedSets;
 
   return {
@@ -309,6 +412,10 @@ async function buildSwimmingRecommendation({ modelId, swimmingAnswers, sessions,
 }
 
 module.exports = {
+  buildRecommendationRequest,
   buildSwimmingRecommendation,
+  deriveFeedbackSignals,
+  parseRecommendationResponse,
+  summarizeRecentSessions,
   summarizeAnswers
 };

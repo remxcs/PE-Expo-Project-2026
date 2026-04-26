@@ -225,14 +225,20 @@ async function handleSubmitFeedback(username, event) {
     feedbackText
   );
 
-  if (!updatedSession) {
+  if (updatedSession.status === "not_found") {
     return createResponse(404, {
       message: "Session not found."
     });
   }
 
+  if (updatedSession.status === "not_pending") {
+    return createResponse(409, {
+      message: "Only your current planned swimming session can accept follow-up feedback."
+    });
+  }
+
   return createResponse(200, {
-    session: updatedSession
+    session: updatedSession.session
   });
 }
 
@@ -293,7 +299,7 @@ exports.handler = async (event) => {
       message: "Method not allowed"
     });
   } catch (error) {
-    if (error instanceof Error && (error.message.includes("Request body") || error.message.includes("must be") || error.message.includes("too large") || error.message.includes("valid JSON") || error.message.includes("required before saving") || error.message.includes("invalid") || error.message.includes("before generating another one") || error.message.includes("before saving another one"))) {
+    if (error instanceof Error && (error.message.includes("Request body") || error.message.includes("must be") || error.message.includes("too large") || error.message.includes("valid JSON") || error.message.includes("required before saving") || error.message.includes("invalid") || error.message.includes("before generating another one") || error.message.includes("before saving another one") || error.message.includes("valid swimming recommendation"))) {
       return createResponse(400, {
         message: error.message
       });

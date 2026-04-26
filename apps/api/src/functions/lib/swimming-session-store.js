@@ -87,7 +87,17 @@ async function updateSessionFeedback(tableName, username, sportId, sessionId, ou
   const session = sessions.find((entry) => entry.sessionId === sessionId);
 
   if (!session) {
-    return null;
+    return {
+      status: "not_found",
+      session: null
+    };
+  }
+
+  if (session.status !== "planned") {
+    return {
+      status: "not_pending",
+      session: session
+    };
   }
 
   const now = new Date().toISOString();
@@ -112,7 +122,10 @@ async function updateSessionFeedback(tableName, username, sportId, sessionId, ou
     ReturnValues: "ALL_NEW"
   }));
 
-  return response.Attributes ? toSessionSummary(response.Attributes) : null;
+  return {
+    status: response.Attributes ? "updated" : "not_found",
+    session: response.Attributes ? toSessionSummary(response.Attributes) : null
+  };
 }
 
 async function resetSportSessions(tableName, username, sportId) {
