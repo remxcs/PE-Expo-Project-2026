@@ -254,6 +254,64 @@ function formatSessionStatus(status) {
   return status;
 }
 
+function formatSwimSetHeading(set) {
+  const unit = set.distance_unit ?? "m";
+
+  if (set.reps && set.distance) {
+    return `${set.reps} × ${set.distance}${unit}`;
+  }
+
+  if (set.distance) {
+    return `${set.distance}${unit}`;
+  }
+
+  if (set.total_distance) {
+    return `${set.total_distance}${unit}`;
+  }
+
+  return "Structured set";
+}
+
+function formatSwimSetSubheading(set) {
+  const parts = [];
+
+  if (Array.isArray(set.strokes) && set.strokes.length) {
+    parts.push(set.strokes.join(", "));
+  }
+
+  if (Array.isArray(set.equipment) && set.equipment.length) {
+    parts.push(`Equipment: ${set.equipment.join(", ")}`);
+  }
+
+  if (Array.isArray(set.training_focus) && set.training_focus.length) {
+    parts.push(`Focus: ${set.training_focus.join(", ")}`);
+  }
+
+  return parts.join(" • ");
+}
+
+function formatSwimSetMeta(set) {
+  const parts = [];
+
+  if (set.total_distance) {
+    parts.push(`${set.total_distance}m`);
+  }
+
+  if (set.rest) {
+    parts.push(`Rest ${set.rest}`);
+  }
+
+  if (set.time_target) {
+    parts.push(`Target ${set.time_target}`);
+  }
+
+  if (set.intensity) {
+    parts.push(set.intensity);
+  }
+
+  return parts.join(" • ");
+}
+
 function clearLocalSportState() {
   window.sessionStorage.removeItem(SPORT_STORAGE_KEY);
   window.sessionStorage.removeItem(ANSWERS_STORAGE_KEY);
@@ -1106,9 +1164,10 @@ export default function App() {
                     <article key={set.id} className="session-set-item">
                       <div>
                         <p className="session-set-type">{set.type}</p>
-                        <h4>{set.text}</h4>
+                        <h4>{formatSwimSetHeading(set)}</h4>
+                        {formatSwimSetSubheading(set) ? <p>{formatSwimSetSubheading(set)}</p> : null}
                       </div>
-                      <p>{set.total_distance}m {set.intensity ? `• ${set.intensity}` : ""}</p>
+                      <p>{formatSwimSetMeta(set)}</p>
                     </article>
                   ))}
                 </div>
