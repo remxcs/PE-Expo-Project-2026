@@ -602,6 +602,34 @@ export default function App() {
         updatedAt: savedResults?.updatedAt ?? new Date().toISOString(),
       });
 
+      const isLastSwimmingQuestion = selectedSport.id === "swimming" &&
+        answeredCount + 1 === selectedQuestions.length &&
+        !savedAnswersBySport.swimming;
+
+      if (isLastSwimmingQuestion) {
+        setActiveQuestionIndex(0);
+        setSelectedSportId("");
+        setSwimmingState((currentState) => ({
+          ...currentState,
+          isGenerating: true,
+          error: "",
+        }));
+        try {
+          const response = await generateSwimmingRecommendation("");
+          setSwimmingState((currentState) => ({
+            ...currentState,
+            isGenerating: false,
+            recommendation: response?.recommendation ?? null,
+          }));
+        } catch (genError) {
+          setSwimmingState((currentState) => ({
+            ...currentState,
+            isGenerating: false,
+            error: genError instanceof Error ? genError.message : "Unable to generate a swim set.",
+          }));
+        }
+      }
+
     } catch (error) {
       setAnswersBySport(savedAnswersBySport);
       writeStoredAnswers(savedAnswersBySport);
