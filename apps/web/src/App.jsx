@@ -2,12 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import {
   clearStoredSession,
+  fetchSwimmingState,
   fetchQuestionnaireResults,
   fetchProtectedProfile,
+  generateSwimmingRecommendation,
   getActiveSession,
   getAuthConfig,
   initializeAuth,
+  resetSwimmingSport,
   saveQuestionnaireResults,
+  saveSwimmingSession,
+  saveSwimmingSessionFeedback,
   signInWithGoogle,
   signOut,
 } from "./auth";
@@ -26,6 +31,21 @@ const EMPTY_RESULTS_STATE = {
   updatedAt: null,
 };
 
+const EMPTY_SWIMMING_STATE = {
+  status: "idle",
+  error: "",
+  sessions: [],
+  pendingFeedbackSession: null,
+  shouldPromptPendingFeedback: false,
+  recommendation: null,
+  retryFeedback: "",
+  followUpFeedback: "",
+  isGenerating: false,
+  isSaving: false,
+  isSubmittingFeedback: false,
+  isResetting: false,
+};
+
 const SPORTS = [
   {
     id: "swimming",
@@ -40,8 +60,6 @@ const SPORTS = [
     accent: "is-waterpolo",
   },
 ];
-
-const DEFAULT_SPORT_ID = "swimming";
 
 const SPORT_QUESTIONS = {
   swimming: [
@@ -199,6 +217,38 @@ function getSportById(sportId) {
   return SPORTS.find((sport) => sport.id === sportId) ?? null;
 }
 
+function getAnsweredCountForSport(sportId, answersBySport) {
+  const sportAnswers = answersBySport[sportId] ?? {};
+  const sportQuestions = SPORT_QUESTIONS[sportId] ?? [];
+  return sportQuestions.filter((question) => sportAnswers[question.id]).length;
+}
+
+function isSportQuestionnaireComplete(sportId, answersBySport) {
+  const sportQuestions = SPORT_QUESTIONS[sportId] ?? [];
+
+  if (!sportQuestions.length) {
+    return false;
+  }
+
+  return getAnsweredCountForSport(sportId, answersBySport) === sportQuestions.length;
+}
+
+function formatSessionStatus(status) {
+  if (status === "planned") {
+    return "Planned";
+  }
+
+  if (status === "completed") {
+    return "Completed";
+  }
+
+  if (status === "skipped") {
+    return "Skipped";
+  }
+
+  return status;
+}
+
 function clearLocalSportState() {
   window.sessionStorage.removeItem(SPORT_STORAGE_KEY);
   window.sessionStorage.removeItem(ANSWERS_STORAGE_KEY);
@@ -212,8 +262,10 @@ export default function App() {
   const [profileState, setProfileState] = useState(EMPTY_PROFILE_STATE);
   const [selectedSportId, setSelectedSportId] = useState("");
   const [answersBySport, setAnswersBySport] = useState(() => readStoredAnswers());
+  const [savedAnswersBySport, setSavedAnswersBySport] = useState(() => readStoredAnswers());
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [resultsState, setResultsState] = useState(EMPTY_RESULTS_STATE);
+  const [swimmingState, setSwimmingState] = useState(EMPTY_SWIMMING_STATE);
 
   const missingAuthConfig = [];
 
@@ -233,6 +285,41 @@ export default function App() {
   const isQuestionnaireComplete = selectedQuestions.length > 0 && answeredCount === selectedQuestions.length;
   const progressPercentage = selectedQuestions.length > 0 ? (answeredCount / selectedQuestions.length) * 100 : 0;
   const currentQuestion = selectedQuestions[activeQuestionIndex] ?? null;
+  const isSelectedSportComplete = selectedSport ? isSportQuestionnaireComplete(selectedSport.id, savedAnswersBySport) : false;
+  const isSwimmingDashboardVisible = selectedSport?.id === "swimming" && isSelectedSportComplete;
+
+  const loadSwimmingDashboard = useCallback(async (accessToken, shouldPromptPendingFeedback = false) => {
+    if (!accessToken) {
+      setSwimmingState(EMPTY_SWIMMING_STATE);
+      return null;
+    }
+
+    setSwimmingState((currentState) => ({
+      ...currentState,
+      status: "loading",
+      error: "",
+    }));
+
+    try {
+      const nextState = await fetchSwimmingState(accessToken);
+      setSwimmingState((currentState) => ({
+        ...currentState,
+        status: "success",
+        error: "",
+        sessions: nextState?.sessions ?? [],
+        pendingFeedbackSession: nextState?.pendingFeedbackSession ?? null,
+        shouldPromptPendingFeedback,
+      }));
+      return nextState;
+    } catch (error) {
+      setSwimmingState((currentState) => ({
+        ...currentState,
+        status: "error",
+        error: error instanceof Error ? error.message : "Unable to load your swimming sessions.",
+      }));
+      return null;
+    }
+  }, []);
 
   const loadProfile = useCallback(async (activeSession) => {
     if (!activeSession?.accessToken) {
@@ -255,6 +342,7 @@ export default function App() {
         error: "",
       });
       setResultsState(EMPTY_RESULTS_STATE);
+      setSwimmingState(EMPTY_SWIMMING_STATE);
 
     try {
       const nextSession = await getActiveSession();
@@ -267,6 +355,7 @@ export default function App() {
         setProfileState(EMPTY_PROFILE_STATE);
         setSelectedSportId("");
         setAnswersBySport({});
+        setSavedAnswersBySport({});
         setAuthError("Your session expired and could not be refreshed. Sign in again to continue.");
         return null;
       }
@@ -282,12 +371,17 @@ export default function App() {
         const nextAnswers = results?.answersBySport ?? {};
 
         setAnswersBySport(nextAnswers);
+        setSavedAnswersBySport(nextAnswers);
         writeStoredAnswers(nextAnswers);
         setResultsState({
           status: "success",
           error: "",
           updatedAt: results?.updatedAt ?? null,
         });
+
+        if (isSportQuestionnaireComplete("swimming", nextAnswers)) {
+          await loadSwimmingDashboard(nextSession.accessToken, true);
+        }
       } catch (error) {
         setResultsState({
           status: "error",
@@ -311,6 +405,7 @@ export default function App() {
         setAuthStatus("signed_out");
         setSelectedSportId("");
         setAnswersBySport({});
+        setSavedAnswersBySport({});
         setResultsState(EMPTY_RESULTS_STATE);
         setAuthError("Your session expired and could not be refreshed. Sign in again to continue.");
       }
@@ -323,7 +418,7 @@ export default function App() {
 
       return null;
     }
-  }, [authConfig.apiBaseUrl]);
+  }, [authConfig.apiBaseUrl, loadSwimmingDashboard]);
 
   useEffect(() => {
     let active = true;
@@ -383,6 +478,7 @@ export default function App() {
             setAuthStatus("signed_out");
             setSelectedSportId("");
             setAnswersBySport({});
+            setSavedAnswersBySport({});
             setResultsState(EMPTY_RESULTS_STATE);
             setAuthError("Your session expired and could not be refreshed. Sign in again to continue.");
             setProfileState(EMPTY_PROFILE_STATE);
@@ -400,6 +496,7 @@ export default function App() {
           setAuthStatus("signed_out");
           setSelectedSportId("");
           setAnswersBySport({});
+          setSavedAnswersBySport({});
           setResultsState(EMPTY_RESULTS_STATE);
           setAuthError("Your session expired and could not be refreshed. Sign in again to continue.");
           setProfileState(EMPTY_PROFILE_STATE);
@@ -438,7 +535,9 @@ export default function App() {
     setProfileState(EMPTY_PROFILE_STATE);
     setSelectedSportId("");
     setAnswersBySport({});
+    setSavedAnswersBySport({});
     setResultsState(EMPTY_RESULTS_STATE);
+    setSwimmingState(EMPTY_SWIMMING_STATE);
     clearLocalSportState();
     signOut();
   }
@@ -451,6 +550,10 @@ export default function App() {
 
     setSelectedSportId(sportId);
     setActiveQuestionIndex(nextIndex);
+
+    if (sportId === "swimming" && isSportQuestionnaireComplete("swimming", savedAnswersBySport) && swimmingState.status === "idle") {
+      void loadSwimmingDashboard(session?.accessToken);
+    }
   }
 
   function handleSportBack() {
@@ -489,13 +592,19 @@ export default function App() {
 
     try {
       const savedResults = await saveQuestionnaireResults(nextAnswers);
-      writeStoredAnswers(savedResults?.answersBySport ?? nextAnswers);
+      const confirmedAnswers = savedResults?.answersBySport ?? nextAnswers;
+      setSavedAnswersBySport(confirmedAnswers);
+      setAnswersBySport(confirmedAnswers);
+      writeStoredAnswers(confirmedAnswers);
       setResultsState({
         status: "success",
         error: "",
         updatedAt: savedResults?.updatedAt ?? new Date().toISOString(),
       });
+
     } catch (error) {
+      setAnswersBySport(savedAnswersBySport);
+      writeStoredAnswers(savedAnswersBySport);
       setResultsState({
         status: "error",
         error: error instanceof Error ? error.message : "Unable to save your answers right now.",
@@ -510,6 +619,143 @@ export default function App() {
 
   function handleNextQuestion() {
     setActiveQuestionIndex((currentIndex) => Math.min(currentIndex + 1, selectedQuestions.length - 1));
+  }
+
+  async function handleGenerateSwimRecommendation() {
+    if (swimmingState.pendingFeedbackSession) {
+      setSwimmingState((currentState) => ({
+        ...currentState,
+        error: "Tell us how your last swimming set went before generating another one.",
+      }));
+      return;
+    }
+
+    setSwimmingState((currentState) => ({
+      ...currentState,
+      isGenerating: true,
+      error: "",
+    }));
+
+    try {
+      const response = await generateSwimmingRecommendation(swimmingState.retryFeedback);
+      setSwimmingState((currentState) => ({
+        ...currentState,
+        isGenerating: false,
+        recommendation: response?.recommendation ?? null,
+      }));
+    } catch (error) {
+      setSwimmingState((currentState) => ({
+        ...currentState,
+        isGenerating: false,
+        error: error instanceof Error ? error.message : "Unable to generate a swimming session right now.",
+      }));
+    }
+  }
+
+  async function handleSaveSwimSession() {
+    if (!swimmingState.recommendation) {
+      return;
+    }
+
+    if (swimmingState.pendingFeedbackSession) {
+      setSwimmingState((currentState) => ({
+        ...currentState,
+        error: "Tell us how your current planned swimming session went before saving another one.",
+      }));
+      return;
+    }
+
+    setSwimmingState((currentState) => ({
+      ...currentState,
+      isSaving: true,
+      error: "",
+    }));
+
+    try {
+      await saveSwimmingSession(swimmingState.recommendation);
+      await loadSwimmingDashboard(session?.accessToken, false);
+      setSwimmingState((currentState) => ({
+        ...currentState,
+        isSaving: false,
+        recommendation: null,
+        retryFeedback: "",
+        shouldPromptPendingFeedback: false,
+      }));
+    } catch (error) {
+      setSwimmingState((currentState) => ({
+        ...currentState,
+        isSaving: false,
+        error: error instanceof Error ? error.message : "Unable to save this swimming session.",
+      }));
+    }
+  }
+
+  async function handleSubmitSwimFeedback(outcome) {
+    if (!swimmingState.pendingFeedbackSession?.sessionId) {
+      return;
+    }
+
+    setSwimmingState((currentState) => ({
+      ...currentState,
+      isSubmittingFeedback: true,
+      error: "",
+    }));
+
+    try {
+      await saveSwimmingSessionFeedback(
+        swimmingState.pendingFeedbackSession.sessionId,
+        outcome,
+        swimmingState.followUpFeedback
+      );
+      await loadSwimmingDashboard(session?.accessToken, false);
+      setSwimmingState((currentState) => ({
+        ...currentState,
+        isSubmittingFeedback: false,
+        followUpFeedback: "",
+        shouldPromptPendingFeedback: false,
+      }));
+    } catch (error) {
+      setSwimmingState((currentState) => ({
+        ...currentState,
+        isSubmittingFeedback: false,
+        error: error instanceof Error ? error.message : "Unable to save your session feedback.",
+      }));
+    }
+  }
+
+  async function handleResetSwimming() {
+    const confirmed = window.confirm("Are you sure? This will reset your swimming questions and delete your saved swimming sessions.");
+
+    if (!confirmed) {
+      return;
+    }
+
+    setSwimmingState((currentState) => ({
+      ...currentState,
+      isResetting: true,
+      error: "",
+    }));
+
+    try {
+      await resetSwimmingSport();
+      const nextAnswers = { ...answersBySport };
+      delete nextAnswers.swimming;
+      setAnswersBySport(nextAnswers);
+      setSavedAnswersBySport(nextAnswers);
+      writeStoredAnswers(nextAnswers);
+      setSelectedSportId("");
+      setResultsState((currentState) => ({
+        ...currentState,
+        updatedAt: new Date().toISOString(),
+      }));
+      setSwimmingState(EMPTY_SWIMMING_STATE);
+    } catch (error) {
+      setSwimmingState((currentState) => ({
+        ...currentState,
+        isResetting: false,
+        error: error instanceof Error ? error.message : "Unable to reset swimming right now.",
+      }));
+    }
   }
 
   if (authStatus === "loading") {
@@ -584,7 +830,9 @@ export default function App() {
           <h1>{selectedSport ? selectedSport.name : `Welcome back, ${displayName}.`}</h1>
           <p className="page-subtitle">
             {selectedSport
-              ? `Make your ${selectedSport.name.toLowerCase()} choice below. Your space stays private to your account.`
+              ? selectedSport.id === "swimming" && isSelectedSportComplete
+                ? "Review your saved swim sessions, answer follow-up feedback, and generate your next recommendation."
+                : `Make your ${selectedSport.name.toLowerCase()} choice below. Your space stays private to your account.`
               : "Choose a sport to jump straight into your own focused decision space."}
           </p>
         </div>
@@ -607,6 +855,42 @@ export default function App() {
         <p className="status-banner is-error">{profileState.error}</p>
       ) : null}
 
+      {!selectedSport && swimmingState.pendingFeedbackSession && swimmingState.shouldPromptPendingFeedback ? (
+        <section className="session-card is-highlighted">
+          <p className="question-number">Follow-up</p>
+          <h3>How did your last swim set go?</h3>
+          <p className="session-summary">
+            {swimmingState.pendingFeedbackSession.recommendation?.title ?? "Your last planned swimming session"}
+          </p>
+          <textarea
+            className="feedback-input"
+            value={swimmingState.followUpFeedback}
+            onChange={(event) => setSwimmingState((currentState) => ({
+              ...currentState,
+              followUpFeedback: event.target.value,
+            }))}
+            placeholder="Add any notes about how it felt, what worked, or what was tough."
+          />
+          <div className="question-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => void handleSubmitSwimFeedback("did-not-do")}
+              disabled={swimmingState.isSubmittingFeedback}
+            >
+              I didn&apos;t do it
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleSubmitSwimFeedback("completed")}
+              disabled={swimmingState.isSubmittingFeedback}
+            >
+              {swimmingState.isSubmittingFeedback ? "Saving feedback…" : "It went like this"}
+            </button>
+          </div>
+        </section>
+      ) : null}
+
       {!selectedSport ? (
         <section className="sports-grid">
           {SPORTS.map((sport) => (
@@ -619,16 +903,208 @@ export default function App() {
 
               <div className="sport-card-bottom">
                 <p className="sport-meta">
-                  {answersBySport[sport.id]
-                    ? `${Object.keys(answersBySport[sport.id]).length} of ${(SPORT_QUESTIONS[sport.id] ?? []).length} questions answered`
-                    : "No answers saved yet"}
+                  {sport.id === "swimming" && swimmingState.pendingFeedbackSession
+                    ? "Tell us how your last swimming set went"
+                    : answersBySport[sport.id]
+                      ? `${Object.keys(answersBySport[sport.id]).length} of ${(SPORT_QUESTIONS[sport.id] ?? []).length} questions answered`
+                      : "No answers saved yet"}
                 </p>
                 <button type="button" onClick={() => handleSportSelect(sport.id)}>
-                  Open {sport.name}
+                  {sport.id === "swimming" && isSportQuestionnaireComplete(sport.id, answersBySport)
+                    ? "Open sessions"
+                    : `Open ${sport.name}`}
                 </button>
               </div>
             </article>
           ))}
+        </section>
+      ) : isSwimmingDashboardVisible ? (
+        <section className={`picker-card ${selectedSport.accent}`}>
+          <div className="picker-header">
+            <div>
+              <p className="sport-kicker">{selectedSport.name}</p>
+              <h2>Your session list</h2>
+              <p>Generate a swim set, save the one you want to do next, and keep building from your previous sessions.</p>
+            </div>
+            <div className="button-row">
+              <button type="button" className="secondary-button" onClick={handleSportBack}>
+                Back to sports
+              </button>
+            </div>
+          </div>
+
+          {swimmingState.status === "loading" ? (
+            <p className="status-banner is-muted">Loading your swimming sessions…</p>
+          ) : null}
+
+          {swimmingState.pendingFeedbackSession && swimmingState.shouldPromptPendingFeedback ? (
+            <section className="session-card is-highlighted">
+              <p className="question-number">Follow-up</p>
+              <h3>How did your last swim set go?</h3>
+              <p className="session-summary">
+                {swimmingState.pendingFeedbackSession.recommendation?.title ?? "Your last planned swimming session"}
+              </p>
+              <textarea
+                className="feedback-input"
+                value={swimmingState.followUpFeedback}
+                onChange={(event) => setSwimmingState((currentState) => ({
+                  ...currentState,
+                  followUpFeedback: event.target.value,
+                }))}
+                placeholder="Add any notes about how it felt, what worked, or what was tough."
+              />
+              <div className="question-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => void handleSubmitSwimFeedback("did-not-do")}
+                  disabled={swimmingState.isSubmittingFeedback}
+                >
+                  I didn&apos;t do it
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSubmitSwimFeedback("completed")}
+                  disabled={swimmingState.isSubmittingFeedback}
+                >
+                  {swimmingState.isSubmittingFeedback ? "Saving feedback…" : "It went like this"}
+                </button>
+              </div>
+            </section>
+          ) : null}
+
+          <section className="session-card">
+            <div className="session-card-header">
+              <div>
+                <p className="question-number">Next suggestion</p>
+                <h3>Build a swimming set for me</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => void handleGenerateSwimRecommendation()}
+                disabled={swimmingState.isGenerating || swimmingState.isSaving || Boolean(swimmingState.pendingFeedbackSession)}
+              >
+                {swimmingState.isGenerating ? "Generating…" : swimmingState.recommendation ? "Try again" : "Suggest a swim set"}
+              </button>
+            </div>
+
+            <textarea
+              className="feedback-input"
+              value={swimmingState.retryFeedback}
+              onChange={(event) => setSwimmingState((currentState) => ({
+                ...currentState,
+                retryFeedback: event.target.value,
+              }))}
+              placeholder="Optional feedback for the next suggestion, for example: shorter main set, more technique, less freestyle."
+            />
+
+            {swimmingState.recommendation ? (
+              <div className="session-plan">
+                <div className="session-plan-header">
+                  <div>
+                    <h3>{swimmingState.recommendation.title}</h3>
+                    <p className="session-summary">{swimmingState.recommendation.summary}</p>
+                  </div>
+                  <div className="session-chip-group">
+                    <span className="session-chip">{swimmingState.recommendation.focus}</span>
+                    <span className="session-chip">{swimmingState.recommendation.intensity}</span>
+                    <span className="session-chip">{swimmingState.recommendation.totalDistance}m</span>
+                  </div>
+                </div>
+
+                <p className="session-note"><strong>Why this set:</strong> {swimmingState.recommendation.rationale}</p>
+                <p className="session-note"><strong>Variety:</strong> {swimmingState.recommendation.variationNote}</p>
+
+                <div className="session-set-list">
+                  {swimmingState.recommendation.sets.map((set) => (
+                    <article key={set.id} className="session-set-item">
+                      <div>
+                        <p className="session-set-type">{set.type}</p>
+                        <h4>{set.text}</h4>
+                      </div>
+                      <p>{set.total_distance}m {set.intensity ? `• ${set.intensity}` : ""}</p>
+                    </article>
+                  ))}
+                </div>
+
+                <ul className="session-coach-notes">
+                  {swimmingState.recommendation.coachNotes.map((note) => (
+                    <li key={note}>{note}</li>
+                  ))}
+                </ul>
+
+                <div className="question-actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => setSwimmingState((currentState) => ({
+                      ...currentState,
+                      recommendation: null,
+                    }))}
+                    disabled={swimmingState.isSaving}
+                  >
+                    Clear suggestion
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveSwimSession()}
+                    disabled={swimmingState.isSaving || Boolean(swimmingState.pendingFeedbackSession)}
+                  >
+                    {swimmingState.isSaving ? "Saving session…" : "Save as next activity"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="status-banner is-muted">No suggestion yet. Generate one when you&apos;re ready.</p>
+            )}
+          </section>
+
+          <section className="session-card">
+            <div className="session-card-header">
+              <div>
+                <p className="question-number">History</p>
+                <h3>Previous swimming sessions</h3>
+              </div>
+            </div>
+
+            {swimmingState.sessions.length ? (
+              <div className="session-history-list">
+                {swimmingState.sessions.map((sessionEntry) => (
+                  <article key={sessionEntry.sessionId} className="session-history-item">
+                    <div className="session-history-top">
+                      <div>
+                        <h4>{sessionEntry.recommendation?.title ?? "Swimming session"}</h4>
+                        <p>{new Date(sessionEntry.acceptedAt).toLocaleString()}</p>
+                      </div>
+                      <span className={`session-status is-${sessionEntry.status}`}>{formatSessionStatus(sessionEntry.status)}</span>
+                    </div>
+                    <p className="session-summary">{sessionEntry.recommendation?.summary}</p>
+                    <p className="session-note">{sessionEntry.recommendation?.totalDistance ?? 0}m • {sessionEntry.recommendation?.focus ?? "general"}</p>
+                    {sessionEntry.feedbackText ? (
+                      <p className="session-note"><strong>Latest feedback:</strong> {sessionEntry.feedbackText}</p>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="status-banner is-muted">No saved swimming sessions yet. Your first accepted recommendation will appear here.</p>
+            )}
+          </section>
+
+          {swimmingState.error ? (
+            <p className="status-banner is-error">{swimmingState.error}</p>
+          ) : null}
+
+          <div className="reset-row">
+            <button
+              type="button"
+              className="secondary-button is-danger"
+              onClick={() => void handleResetSwimming()}
+              disabled={swimmingState.isResetting}
+            >
+              {swimmingState.isResetting ? "Resetting swimming…" : "Reset swimming"}
+            </button>
+          </div>
         </section>
       ) : (
         <section className={`picker-card ${selectedSport.accent}`}>

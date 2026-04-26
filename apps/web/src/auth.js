@@ -410,3 +410,45 @@ export async function saveQuestionnaireResults(answersBySport, accessToken) {
     },
   });
 }
+
+export async function fetchSwimmingState(accessToken) {
+  return fetchProtectedJson("sports/swimming", { accessToken });
+}
+
+export async function generateSwimmingRecommendation(feedback, accessToken) {
+  return fetchProtectedJson("sports/swimming/recommendation", {
+    accessToken,
+    method: "POST",
+    body: {
+      feedback,
+    },
+  });
+}
+
+export async function saveSwimmingSession(recommendation, accessToken) {
+  return fetchProtectedJson("sports/swimming/sessions", {
+    accessToken,
+    method: "POST",
+    body: {
+      recommendation,
+    },
+  });
+}
+
+export async function saveSwimmingSessionFeedback(sessionId, outcome, feedbackText, accessToken) {
+  return fetchProtectedJson(`sports/swimming/sessions/${sessionId}/feedback`, {
+    accessToken,
+    method: "PUT",
+    body: {
+      outcome,
+      feedbackText,
+    },
+  });
+}
+
+export async function resetSwimmingSport(accessToken) {
+  return fetchProtectedJson("sports/swimming/reset", {
+    accessToken,
+    method: "DELETE",
+  });
+}

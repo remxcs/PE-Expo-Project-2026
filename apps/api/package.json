@@ -2,12 +2,13 @@
   "name": "@pe-expo/api",
   "private": true,
   "version": "1.0.0",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "build": "sam build --template-file template.yaml",
     "validate": "sam validate --template-file template.yaml"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1037.0",
     "@aws-sdk/client-cognito-identity-provider": "^3.1037.0",
     "@aws-sdk/client-dynamodb": "^3.1037.0",
     "@aws-sdk/lib-dynamodb": "^3.1037.0"

@@ -32,6 +32,10 @@ Parameters:
     Type: String
     Description: Google OAuth client secret used by Cognito federation.
     NoEcho: true
+  BedrockModelId:
+    Type: String
+    Description: Bedrock model ID or inference profile ARN used for swimming recommendations.
+    Default: amazon.nova-lite-v1:0
 
 Globals:
   Function:
@@ -49,7 +53,9 @@ Resources:
           Ref: WebAllowedOrigins
         AllowMethods:
           - GET
+          - POST
           - PUT
+          - DELETE
           - OPTIONS
         AllowHeaders:
           - Authorization
@@ -253,6 +259,101 @@ Resources:
               Ref: ApiGateway
             Path: /results
             Method: PUT
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  SportsActivityTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: sortKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: sortKey
+          KeyType: RANGE
+
+  SwimmingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../../
+      Handler: apps/api/src/functions/swimming.handler
+      Description: Generates and manages swimming sessions for the current authenticated user.
+      Timeout: 20
+      MemorySize: 256
+      Environment:
+        Variables:
+          USER_POOL_ID:
+            Ref: UserPool
+          SPORTS_ACTIVITY_TABLE_NAME:
+            Ref: SportsActivityTable
+          BEDROCK_MODEL_ID:
+            Ref: BedrockModelId
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName:
+              Ref: SportsActivityTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminGetUser
+                - cognito-idp:AdminUpdateUserAttributes
+              Resource:
+                Fn::GetAtt:
+                  - UserPool
+                  - Arn
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: '*'
+      Events:
+        SwimmingStateRoute:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ApiGateway
+            Path: /sports/swimming
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+        SwimmingRecommendationRoute:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ApiGateway
+            Path: /sports/swimming/recommendation
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+        SwimmingSessionAcceptRoute:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ApiGateway
+            Path: /sports/swimming/sessions
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+        SwimmingSessionFeedbackRoute:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ApiGateway
+            Path: /sports/swimming/sessions/{sessionId}/feedback
+            Method: PUT
+            Auth:
+              Authorizer: CognitoAuthorizer
+        SwimmingResetRoute:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ApiGateway
+            Path: /sports/swimming/reset
+            Method: DELETE
             Auth:
               Authorizer: CognitoAuthorizer
 

@@ -304,6 +304,139 @@
   z-index: 1;
 }
 
+.session-card {
+  position: relative;
+  z-index: 1;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.52);
+  margin-bottom: var(--space-4);
+}
+
+.session-card.is-highlighted {
+  background: linear-gradient(135deg, rgba(61, 157, 255, 0.14), rgba(255, 255, 255, 0.62));
+}
+
+.session-card-header,
+.session-history-top,
+.session-plan-header,
+.session-chip-group,
+.reset-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.session-summary,
+.session-note,
+.session-history-item p,
+.session-set-item p {
+  margin: 0.65rem 0 0;
+  color: var(--color-text-soft);
+  line-height: 1.6;
+}
+
+.session-plan {
+  margin-top: var(--space-4);
+}
+
+.session-chip-group {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.session-chip,
+.session-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(18, 25, 56, 0.08);
+  color: var(--color-text);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.session-status.is-planned {
+  background: rgba(61, 157, 255, 0.16);
+}
+
+.session-status.is-completed {
+  background: rgba(28, 215, 123, 0.16);
+}
+
+.session-status.is-skipped {
+  background: rgba(255, 194, 82, 0.24);
+}
+
+.feedback-input {
+  width: 100%;
+  min-height: 7rem;
+  margin-top: var(--space-3);
+  padding: 1rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--color-text);
+  font: inherit;
+  resize: vertical;
+}
+
+.session-set-list,
+.session-history-list,
+.session-coach-notes {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.session-set-item,
+.session-history-item {
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--color-border-strong);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.session-set-item h4,
+.session-history-item h4 {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.session-set-type {
+  margin: 0 0 0.35rem;
+  color: var(--color-brand-cyan);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.session-coach-notes {
+  padding-left: 1.1rem;
+  color: var(--color-text-soft);
+}
+
+.session-coach-notes li + li {
+  margin-top: 0.35rem;
+}
+
+.reset-row {
+  margin-top: var(--space-5);
+  justify-content: flex-end;
+}
+
+.secondary-button.is-danger {
+  background: rgba(255, 91, 122, 0.12);
+  color: var(--color-danger);
+}
+
 .question-number {
   margin: 0 0 0.65rem;
   color: var(--color-brand-cyan);
@@ -329,6 +462,7 @@
 
 .choice-button,
 .button-row button,
+.session-card button,
 .google-button {
   min-height: 3.4rem;
   padding: var(--space-3) var(--space-4);
@@ -348,6 +482,7 @@
 
 .choice-button,
 .sport-card button,
+.session-card button:not(.secondary-button),
 .google-button,
 .button-row button:first-child {
   background: linear-gradient(135deg, var(--color-brand-purple), var(--color-brand-cyan));
@@ -479,7 +614,11 @@
   .dashboard-header,
   .picker-header,
   .sport-card-bottom,
-  .question-actions {
+  .question-actions,
+  .session-card-header,
+  .session-history-top,
+  .session-plan-header,
+  .reset-row {
     flex-direction: column;
     align-items: stretch;
   }
