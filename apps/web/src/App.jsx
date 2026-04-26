@@ -36,6 +36,7 @@ const EMPTY_SWIMMING_STATE = {
   error: "",
   successMessage: "",
   sessions: [],
+  expandedSessionId: null,
   pendingFeedbackSession: null,
   shouldPromptPendingFeedback: false,
   recommendation: null,
@@ -277,6 +278,8 @@ function formatSwimSetSubheading(set) {
 
   if (Array.isArray(set.strokes) && set.strokes.length) {
     parts.push(set.strokes.join(", "));
+  } else {
+    parts.push("Any stroke");
   }
 
   if (Array.isArray(set.equipment) && set.equipment.length) {
@@ -403,6 +406,9 @@ export default function App() {
         status: "success",
         error: "",
         sessions: nextState?.sessions ?? [],
+        expandedSessionId: (nextState?.sessions ?? []).some((sessionEntry) => sessionEntry.sessionId === currentState.expandedSessionId)
+          ? currentState.expandedSessionId
+          : null,
         pendingFeedbackSession: nextState?.pendingFeedbackSession ?? null,
         shouldPromptPendingFeedback,
       }));
@@ -798,15 +804,16 @@ export default function App() {
     }));
 
     try {
-      await saveSwimmingSession(swimmingState.recommendation);
+      const savedResponse = await saveSwimmingSession(swimmingState.recommendation);
       await loadSwimmingDashboard(session?.accessToken, false);
       setSwimmingState((currentState) => ({
         ...currentState,
         isSaving: false,
         recommendation: null,
         retryFeedback: "",
+        expandedSessionId: savedResponse?.session?.sessionId ?? currentState.expandedSessionId,
         shouldPromptPendingFeedback: false,
-        successMessage: "Swimming set saved. Your follow-up feedback will shape the next recommendation.",
+        successMessage: "Swimming set saved. The full session is open below and your follow-up feedback will shape the next recommendation.",
       }));
     } catch (error) {
       setSwimmingState((currentState) => ({
@@ -1227,6 +1234,41 @@ export default function App() {
                     <p className="session-note">{sessionEntry.recommendation?.totalDistance ?? 0}m • {sessionEntry.recommendation?.focus ?? "general"}</p>
                     {sessionEntry.feedbackText ? (
                       <p className="session-note"><strong>Latest feedback:</strong> {sessionEntry.feedbackText}</p>
+                    ) : null}
+                    <div className="question-actions">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => setSwimmingState((currentState) => ({
+                          ...currentState,
+                          expandedSessionId: currentState.expandedSessionId === sessionEntry.sessionId ? null : sessionEntry.sessionId,
+                        }))}
+                      >
+                        {swimmingState.expandedSessionId === sessionEntry.sessionId ? "Hide full session" : "View full session"}
+                      </button>
+                    </div>
+                    {swimmingState.expandedSessionId === sessionEntry.sessionId && sessionEntry.recommendation ? (
+                      <div className="session-plan">
+                        <p className="session-note"><strong>Why this set:</strong> {sessionEntry.recommendation.rationale}</p>
+                        <p className="session-note"><strong>Variety:</strong> {sessionEntry.recommendation.variationNote}</p>
+                        <div className="session-set-list">
+                          {sessionEntry.recommendation.sets.map((set) => (
+                            <article key={set.id} className="session-set-item">
+                              <div>
+                                <p className="session-set-type">{set.type}</p>
+                                <h4>{formatSwimSetHeading(set)}</h4>
+                                {formatSwimSetSubheading(set) ? <p>{formatSwimSetSubheading(set)}</p> : null}
+                              </div>
+                              <p>{formatSwimSetMeta(set)}</p>
+                            </article>
+                          ))}
+                        </div>
+                        <ul className="session-coach-notes">
+                          {sessionEntry.recommendation.coachNotes.map((note) => (
+                            <li key={note}>{note}</li>
+                          ))}
+                        </ul>
+                      </div>
                     ) : null}
                   </article>
                 ))}
