@@ -293,6 +293,38 @@ export default function App() {
   const isSelectedSportComplete = selectedSport ? isSportQuestionnaireComplete(selectedSport.id, savedAnswersBySport) : false;
   const isSwimmingDashboardVisible = selectedSport?.id === "swimming" && isSelectedSportComplete;
 
+  const generateInitialSwimmingRecommendation = useCallback(async (accessToken) => {
+    setSwimmingState((currentState) => ({
+      ...currentState,
+      status: "success",
+      isGenerating: true,
+      error: "",
+      successMessage: "Preparing your first Bedrock-powered swim suggestion.",
+      recommendation: null,
+    }));
+
+    try {
+      const response = await generateSwimmingRecommendation("", accessToken);
+      setSwimmingState((currentState) => ({
+        ...currentState,
+        status: "success",
+        isGenerating: false,
+        recommendation: response?.recommendation ?? null,
+        successMessage: "Your first swim suggestion is ready and uses your saved answers plus the swim set library.",
+      }));
+      return response?.recommendation ?? null;
+    } catch (error) {
+      setSwimmingState((currentState) => ({
+        ...currentState,
+        status: "error",
+        isGenerating: false,
+        error: error instanceof Error ? error.message : "Unable to generate a swim set.",
+        successMessage: "",
+      }));
+      return null;
+    }
+  }, []);
+
   const loadSwimmingDashboard = useCallback(async (accessToken, shouldPromptPendingFeedback = false) => {
     if (!accessToken) {
       setSwimmingState(EMPTY_SWIMMING_STATE);
@@ -558,8 +590,19 @@ export default function App() {
     setSelectedSportId(sportId);
     setActiveQuestionIndex(nextIndex);
 
-    if (sportId === "swimming" && isSportQuestionnaireComplete("swimming", savedAnswersBySport) && swimmingState.status === "idle") {
-      void loadSwimmingDashboard(session?.accessToken);
+    if (sportId === "swimming" && isSportQuestionnaireComplete("swimming", savedAnswersBySport)) {
+      void (async () => {
+        const nextState = await loadSwimmingDashboard(session?.accessToken);
+
+        if (
+          nextState?.questionnaireComplete &&
+          !nextState.pendingFeedbackSession &&
+          nextState.sessions.length === 0 &&
+          !swimmingState.recommendation
+        ) {
+          await generateInitialSwimmingRecommendation(session?.accessToken);
+        }
+      })();
     }
   }
 
@@ -616,32 +659,7 @@ export default function App() {
       if (isLastSwimmingQuestion) {
         setActiveQuestionIndex(0);
         setSelectedSportId("swimming");
-        setSwimmingState((currentState) => ({
-          ...currentState,
-          status: "success",
-          isGenerating: true,
-          error: "",
-          successMessage: "Preparing your first Bedrock-powered swim suggestion.",
-          recommendation: null,
-        }));
-        try {
-          const response = await generateSwimmingRecommendation("");
-          setSwimmingState((currentState) => ({
-            ...currentState,
-            status: "success",
-            isGenerating: false,
-            recommendation: response?.recommendation ?? null,
-            successMessage: "Your first swim suggestion is ready and uses your saved answers plus the swim set library.",
-          }));
-        } catch (genError) {
-          setSwimmingState((currentState) => ({
-            ...currentState,
-            status: "error",
-            isGenerating: false,
-            error: genError instanceof Error ? genError.message : "Unable to generate a swim set.",
-            successMessage: "",
-          }));
-        }
+        await generateInitialSwimmingRecommendation(session?.accessToken);
       }
 
     } catch (error) {
