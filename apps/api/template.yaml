@@ -35,7 +35,7 @@ Parameters:
   BedrockModelId:
     Type: String
     Description: Bedrock model ID or inference profile ARN used for swimming recommendations.
-    Default: amazon.nova-lite-v1:0
+    Default: eu.amazon.nova-lite-v1:0
 
 Globals:
   Function:

@@ -25,6 +25,7 @@ env:
   COGNITO_DOMAIN_PREFIX: ${{ vars.COGNITO_DOMAIN_PREFIX }}
   GOOGLE_OAUTH_CLIENT_ID: ${{ vars.GOOGLE_OAUTH_CLIENT_ID }}
   GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+  BEDROCK_MODEL_ID: ${{ vars.BEDROCK_MODEL_ID || 'eu.amazon.nova-lite-v1:0' }}
 
 jobs:
   deploy:
@@ -94,6 +95,7 @@ jobs:
           CognitoDomainPrefix="$COGNITO_DOMAIN_PREFIX"
           GoogleClientId="$GOOGLE_OAUTH_CLIENT_ID"
           GoogleClientSecret="$GOOGLE_OAUTH_CLIENT_SECRET"
+          BedrockModelId="$BEDROCK_MODEL_ID"
           --no-confirm-changeset
           --no-fail-on-empty-changeset
 
