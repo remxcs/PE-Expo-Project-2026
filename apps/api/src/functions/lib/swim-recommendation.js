@@ -52,6 +52,13 @@ const MAX_TEXT_FIELD_LENGTH = 280;
 const MAX_NOTE_LENGTH = 200;
 const MAX_PRIOR_SESSION_COUNT = 5;
 const MAX_BEDROCK_ATTEMPTS = 2;
+const MAX_SHORTLIST_SIZE = 12;
+
+const SWIM_SET_ROLE_TYPES = {
+  warmup: ["preset"],
+  main: ["main", "kick", "pull"],
+  cooldown: ["cooldown"]
+};
 
 function sanitizePromptText(value, maxLength = MAX_TEXT_FIELD_LENGTH) {
   if (typeof value !== "string") {
@@ -149,6 +156,51 @@ function scoreSet(swimSet, answerSummary, recentSetIds) {
   return score;
 }
 
+function getSessionSetRole(swimSet) {
+  if (SWIM_SET_ROLE_TYPES.warmup.includes(swimSet.type)) {
+    return "warmup";
+  }
+
+  if (SWIM_SET_ROLE_TYPES.cooldown.includes(swimSet.type)) {
+    return "cooldown";
+  }
+
+  if (SWIM_SET_ROLE_TYPES.main.includes(swimSet.type)) {
+    return "main";
+  }
+
+  return "main";
+}
+
+function mergeRequiredRoleSets(scoredSets) {
+  const selectedSets = [];
+  const selectedIds = new Set();
+
+  for (const role of ["warmup", "main", "cooldown"]) {
+    const requiredSet = scoredSets.find((swimSet) => getSessionSetRole(swimSet) === role);
+
+    if (requiredSet && !selectedIds.has(requiredSet.id)) {
+      selectedSets.push(requiredSet);
+      selectedIds.add(requiredSet.id);
+    }
+  }
+
+  for (const swimSet of scoredSets) {
+    if (selectedSets.length >= MAX_SHORTLIST_SIZE) {
+      break;
+    }
+
+    if (selectedIds.has(swimSet.id)) {
+      continue;
+    }
+
+    selectedSets.push(swimSet);
+    selectedIds.add(swimSet.id);
+  }
+
+  return selectedSets;
+}
+
 function shortlistSwimSets(swimmingAnswers, sessions) {
   const answerSummary = summarizeAnswers(swimmingAnswers);
   const recentSetIds = new Set(
@@ -157,13 +209,15 @@ function shortlistSwimSets(swimmingAnswers, sessions) {
       .flatMap((session) => session.recommendation?.sets?.map((set) => set.id) ?? [])
   );
 
-  return loadSwimLibrary()
+  const scoredSets = loadSwimLibrary()
     .map((swimSet) => ({
       ...swimSet,
       score: scoreSet(swimSet, answerSummary, recentSetIds)
     }))
-    .sort((left, right) => right.score - left.score)
-    .slice(0, 12)
+    .sort((left, right) => right.score - left.score);
+
+  return mergeRequiredRoleSets(scoredSets)
+    .slice(0, MAX_SHORTLIST_SIZE)
     .map(({ score, ...swimSet }) => swimSet);
 }
 
@@ -257,6 +311,8 @@ async function invokeBedrockRecommendation({ modelId, answerSummary, candidates,
     "Use retry feedback as the strongest immediate instruction for the next suggestion.",
     "Use prior completed and skipped sessions plus their feedback to improve future suggestions.",
     "Avoid repeating candidate set IDs that appear in negative or skipped feedback unless the retry feedback explicitly asks for them.",
+    "Every swim session must include a warmup, at least one main-work block, and a cooldown.",
+    "Treat shortlist entries with type 'preset' as warmup, shortlist entries with type 'cooldown' as cooldown, and entries with type 'main', 'kick', or 'pull' as main-work blocks.",
     "Choose 2 to 5 candidate set IDs only from the shortlist.",
     "Keep the recommendation safe, progressive, varied from recent sessions, and aligned to the swimmer's level and goals.",
     "Do not invent new set IDs, distances, or drills outside the shortlist.",
@@ -334,6 +390,20 @@ function validateRecommendationPayload(payload, candidateSetMap) {
 
   if (selectedSets.length !== dedupedSetIds.length) {
     throw new Error("The recommendation referenced a swim set outside the shortlist.");
+  }
+
+  const selectedRoles = new Set(selectedSets.map((set) => getSessionSetRole(set)));
+
+  if (!selectedRoles.has("warmup")) {
+    throw new Error("The recommendation must include a warmup set.");
+  }
+
+  if (!selectedRoles.has("main")) {
+    throw new Error("The recommendation must include a main-work set.");
+  }
+
+  if (!selectedRoles.has("cooldown")) {
+    throw new Error("The recommendation must include a cooldown set.");
   }
 
   return {
@@ -415,7 +485,10 @@ module.exports = {
   buildRecommendationRequest,
   buildSwimmingRecommendation,
   deriveFeedbackSignals,
+  getSessionSetRole,
+  mergeRequiredRoleSets,
   parseRecommendationResponse,
+  shortlistSwimSets,
   summarizeRecentSessions,
   summarizeAnswers
 };

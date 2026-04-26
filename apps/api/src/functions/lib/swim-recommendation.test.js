@@ -5,6 +5,9 @@ const { buildStableSwimSetId } = require("./swim-library");
 const {
   buildRecommendationRequest,
   deriveFeedbackSignals,
+  getSessionSetRole,
+  mergeRequiredRoleSets,
+  shortlistSwimSets,
   summarizeAnswers,
   summarizeRecentSessions
 } = require("./swim-recommendation");
@@ -120,4 +123,38 @@ test("buildRecommendationRequest includes retry feedback and derived feedback si
   assert.equal(request.retryFeedback, "Shorter main set please");
   assert.deepEqual(request.feedbackSignals.avoidSetIds, ["swim-set-zeta"]);
   assert.equal(request.candidateSets[0].id, "swim-set-zeta");
+});
+
+test("session role mapping treats preset as warmup and cooldown as cooldown", () => {
+  assert.equal(getSessionSetRole({ type: "preset" }), "warmup");
+  assert.equal(getSessionSetRole({ type: "cooldown" }), "cooldown");
+  assert.equal(getSessionSetRole({ type: "kick" }), "main");
+  assert.equal(getSessionSetRole({ type: "pull" }), "main");
+});
+
+test("mergeRequiredRoleSets keeps warmup, main, and cooldown in the shortlist", () => {
+  const merged = mergeRequiredRoleSets([
+    { id: "main-1", type: "main", score: 10 },
+    { id: "cool-1", type: "cooldown", score: 9 },
+    { id: "preset-1", type: "preset", score: 1 },
+    { id: "kick-1", type: "kick", score: 8 }
+  ]);
+
+  const mergedRoles = new Set(merged.map((set) => getSessionSetRole(set)));
+  assert.ok(mergedRoles.has("warmup"));
+  assert.ok(mergedRoles.has("main"));
+  assert.ok(mergedRoles.has("cooldown"));
+});
+
+test("shortlistSwimSets includes warmup, main, and cooldown candidates", () => {
+  const shortlisted = shortlistSwimSets({
+    "current-level": "B",
+    "goal-level": "C",
+    "improvement-area": "C"
+  }, []);
+
+  const shortlistedRoles = new Set(shortlisted.map((set) => getSessionSetRole(set)));
+  assert.ok(shortlistedRoles.has("warmup"));
+  assert.ok(shortlistedRoles.has("main"));
+  assert.ok(shortlistedRoles.has("cooldown"));
 });
