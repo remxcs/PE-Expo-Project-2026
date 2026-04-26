@@ -210,7 +210,7 @@ export default function App() {
   const [authError, setAuthError] = useState("");
   const [session, setSession] = useState(null);
   const [profileState, setProfileState] = useState(EMPTY_PROFILE_STATE);
-  const [selectedSportId, setSelectedSportId] = useState(() => window.sessionStorage.getItem(SPORT_STORAGE_KEY) || "");
+  const [selectedSportId, setSelectedSportId] = useState("");
   const [answersBySport, setAnswersBySport] = useState(() => readStoredAnswers());
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [resultsState, setResultsState] = useState(EMPTY_RESULTS_STATE);
@@ -341,8 +341,8 @@ export default function App() {
       setAuthStatus(result.session ? "signed_in" : "signed_out");
 
       if (result.session) {
-        setSelectedSportId(DEFAULT_SPORT_ID);
-        window.sessionStorage.setItem(SPORT_STORAGE_KEY, DEFAULT_SPORT_ID);
+        setSelectedSportId("");
+        window.sessionStorage.removeItem(SPORT_STORAGE_KEY);
       }
 
       if (result.session?.accessToken) {
@@ -451,13 +451,11 @@ export default function App() {
 
     setSelectedSportId(sportId);
     setActiveQuestionIndex(nextIndex);
-    window.sessionStorage.setItem(SPORT_STORAGE_KEY, sportId);
   }
 
   function handleSportBack() {
     setSelectedSportId("");
     setActiveQuestionIndex(0);
-    window.sessionStorage.removeItem(SPORT_STORAGE_KEY);
   }
 
   async function handleAnswer(questionId, optionId) {
