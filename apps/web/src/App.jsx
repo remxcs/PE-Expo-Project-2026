@@ -54,12 +54,14 @@ const SPORTS = [
     name: "Swimming",
     description: "Build confidence in the water with a clear path from beginner goals to club-level progress.",
     accent: "is-swimming",
+    isAvailable: true,
   },
   {
     id: "water-polo",
     name: "Water Polo",
-    description: "Grow your game sense, stamina, and pool skills from casual play through competitive performance.",
+    description: "Water Polo recommendations are still in progress while we build the first supported dataset and session engine.",
     accent: "is-waterpolo",
+    isAvailable: false,
   },
 ];
 
@@ -646,6 +648,12 @@ export default function App() {
   }
 
   function handleSportSelect(sportId) {
+    const sport = getSportById(sportId);
+
+    if (!sport?.isAvailable) {
+      return;
+    }
+
     const sportQuestions = SPORT_QUESTIONS[sportId] ?? [];
     const storedResponses = answersBySport[sportId] ?? {};
     const firstUnansweredIndex = sportQuestions.findIndex((question) => !storedResponses[question.id]);
@@ -972,7 +980,9 @@ export default function App() {
               {selectedSport
                 ? selectedSport.id === "swimming" && isSelectedSportComplete
                   ? "Review your saved swim sessions, answer follow-up feedback, and generate your next recommendation."
-                  : supportsSessionRecommendations(selectedSport.id)
+                  : !selectedSport.isAvailable
+                    ? `${selectedSport.name} is coming soon while we finish the first recommendation dataset.`
+                    : supportsSessionRecommendations(selectedSport.id)
                     ? `Make your ${selectedSport.name.toLowerCase()} choice below. Your space stays private to your account.`
                     : `Save your ${selectedSport.name.toLowerCase()} questionnaire here. Session recommendations are currently available for Swimming only.`
                 : "Choose a sport to jump straight into your own focused decision space."}
@@ -1048,6 +1058,8 @@ export default function App() {
                 <p className="sport-meta">
                   {sport.id === "swimming" && swimmingState.pendingFeedbackSession
                     ? "Tell us how your last swimming set went"
+                    : !sport.isAvailable
+                      ? "Coming soon"
                     : answersBySport[sport.id]
                       ? supportsSessionRecommendations(sport.id) && isSportQuestionnaireComplete(sport.id, answersBySport)
                         ? "Questionnaire complete. Open your session space."
@@ -1056,9 +1068,11 @@ export default function App() {
                           : `${Object.keys(answersBySport[sport.id]).length} of ${(SPORT_QUESTIONS[sport.id] ?? []).length} questions answered`
                       : "No answers saved yet"}
                 </p>
-                <button type="button" onClick={() => handleSportSelect(sport.id)}>
+                <button type="button" onClick={() => handleSportSelect(sport.id)} disabled={!sport.isAvailable}>
                   {sport.id === "swimming" && isSportQuestionnaireComplete(sport.id, answersBySport)
                     ? "Open sessions"
+                    : !sport.isAvailable
+                      ? "Coming soon"
                     : !supportsSessionRecommendations(sport.id) && isSportQuestionnaireComplete(sport.id, answersBySport)
                       ? "Review answers"
                       : `Open ${sport.name}`}
