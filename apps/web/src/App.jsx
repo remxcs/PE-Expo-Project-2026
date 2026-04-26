@@ -233,6 +233,10 @@ function isSportQuestionnaireComplete(sportId, answersBySport) {
   return getAnsweredCountForSport(sportId, answersBySport) === sportQuestions.length;
 }
 
+function supportsSessionRecommendations(sportId) {
+  return sportId === "swimming";
+}
+
 function formatSessionStatus(status) {
   if (status === "planned") {
     return "Planned";
@@ -608,22 +612,26 @@ export default function App() {
 
       if (isLastSwimmingQuestion) {
         setActiveQuestionIndex(0);
-        setSelectedSportId("");
+        setSelectedSportId("swimming");
         setSwimmingState((currentState) => ({
           ...currentState,
+          status: "success",
           isGenerating: true,
           error: "",
+          recommendation: null,
         }));
         try {
           const response = await generateSwimmingRecommendation("");
           setSwimmingState((currentState) => ({
             ...currentState,
+            status: "success",
             isGenerating: false,
             recommendation: response?.recommendation ?? null,
           }));
         } catch (genError) {
           setSwimmingState((currentState) => ({
             ...currentState,
+            status: "error",
             isGenerating: false,
             error: genError instanceof Error ? genError.message : "Unable to generate a swim set.",
           }));
@@ -857,12 +865,14 @@ export default function App() {
           <p className="eyebrow">Your Sports</p>
           <h1>{selectedSport ? selectedSport.name : `Welcome back, ${displayName}.`}</h1>
           <p className="page-subtitle">
-            {selectedSport
-              ? selectedSport.id === "swimming" && isSelectedSportComplete
-                ? "Review your saved swim sessions, answer follow-up feedback, and generate your next recommendation."
-                : `Make your ${selectedSport.name.toLowerCase()} choice below. Your space stays private to your account.`
-              : "Choose a sport to jump straight into your own focused decision space."}
-          </p>
+              {selectedSport
+                ? selectedSport.id === "swimming" && isSelectedSportComplete
+                  ? "Review your saved swim sessions, answer follow-up feedback, and generate your next recommendation."
+                  : supportsSessionRecommendations(selectedSport.id)
+                    ? `Make your ${selectedSport.name.toLowerCase()} choice below. Your space stays private to your account.`
+                    : `Save your ${selectedSport.name.toLowerCase()} questionnaire here. Session recommendations are currently available for Swimming only.`
+                : "Choose a sport to jump straight into your own focused decision space."}
+           </p>
         </div>
 
         <div className="profile-chip">
@@ -934,13 +944,19 @@ export default function App() {
                   {sport.id === "swimming" && swimmingState.pendingFeedbackSession
                     ? "Tell us how your last swimming set went"
                     : answersBySport[sport.id]
-                      ? `${Object.keys(answersBySport[sport.id]).length} of ${(SPORT_QUESTIONS[sport.id] ?? []).length} questions answered`
+                      ? supportsSessionRecommendations(sport.id) && isSportQuestionnaireComplete(sport.id, answersBySport)
+                        ? "Questionnaire complete. Open your session space."
+                        : !supportsSessionRecommendations(sport.id) && isSportQuestionnaireComplete(sport.id, answersBySport)
+                          ? "Questionnaire complete. Saved for future recommendations."
+                          : `${Object.keys(answersBySport[sport.id]).length} of ${(SPORT_QUESTIONS[sport.id] ?? []).length} questions answered`
                       : "No answers saved yet"}
                 </p>
                 <button type="button" onClick={() => handleSportSelect(sport.id)}>
                   {sport.id === "swimming" && isSportQuestionnaireComplete(sport.id, answersBySport)
                     ? "Open sessions"
-                    : `Open ${sport.name}`}
+                    : !supportsSessionRecommendations(sport.id) && isSportQuestionnaireComplete(sport.id, answersBySport)
+                      ? "Review answers"
+                      : `Open ${sport.name}`}
                 </button>
               </div>
             </article>
@@ -1197,13 +1213,21 @@ export default function App() {
 
           {isQuestionnaireComplete ? (
             <p className="status-banner is-success">
-              All questions answered for {selectedSport.name}. Your results are saved to your account.
+              {supportsSessionRecommendations(selectedSport.id)
+                ? `All questions answered for ${selectedSport.name}. Your results are saved to your account.`
+                : `All questions answered for ${selectedSport.name}. Your results are saved to your account for future recommendations.`}
             </p>
           ) : (
             <p className="status-banner is-muted">
               {answeredCount} of {selectedQuestions.length} questions answered so far.
             </p>
           )}
+
+          {selectedSport.id === "water-polo" ? (
+            <p className="status-banner is-muted">
+              Water Polo answers save to your account now. Recommendation sessions are currently available for Swimming only.
+            </p>
+          ) : null}
 
           {resultsState.status === "saving" ? (
             <p className="status-banner is-muted">Saving your latest answer…</p>
