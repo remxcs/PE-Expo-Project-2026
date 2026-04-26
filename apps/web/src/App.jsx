@@ -34,6 +34,7 @@ const EMPTY_RESULTS_STATE = {
 const EMPTY_SWIMMING_STATE = {
   status: "idle",
   error: "",
+  successMessage: "",
   sessions: [],
   pendingFeedbackSession: null,
   shouldPromptPendingFeedback: false,
@@ -298,11 +299,12 @@ export default function App() {
       return null;
     }
 
-    setSwimmingState((currentState) => ({
-      ...currentState,
-      status: "loading",
-      error: "",
-    }));
+      setSwimmingState((currentState) => ({
+        ...currentState,
+        status: "loading",
+        error: "",
+        successMessage: "",
+      }));
 
     try {
       const nextState = await fetchSwimmingState(accessToken);
@@ -316,11 +318,12 @@ export default function App() {
       }));
       return nextState;
     } catch (error) {
-      setSwimmingState((currentState) => ({
-        ...currentState,
-        status: "error",
-        error: error instanceof Error ? error.message : "Unable to load your swimming sessions.",
-      }));
+        setSwimmingState((currentState) => ({
+          ...currentState,
+          status: "error",
+          error: error instanceof Error ? error.message : "Unable to load your swimming sessions.",
+          successMessage: "",
+        }));
       return null;
     }
   }, []);
@@ -618,6 +621,7 @@ export default function App() {
           status: "success",
           isGenerating: true,
           error: "",
+          successMessage: "Preparing your first Bedrock-powered swim suggestion.",
           recommendation: null,
         }));
         try {
@@ -627,6 +631,7 @@ export default function App() {
             status: "success",
             isGenerating: false,
             recommendation: response?.recommendation ?? null,
+            successMessage: "Your first swim suggestion is ready and uses your saved answers plus the swim set library.",
           }));
         } catch (genError) {
           setSwimmingState((currentState) => ({
@@ -634,6 +639,7 @@ export default function App() {
             status: "error",
             isGenerating: false,
             error: genError instanceof Error ? genError.message : "Unable to generate a swim set.",
+            successMessage: "",
           }));
         }
       }
@@ -662,6 +668,7 @@ export default function App() {
       setSwimmingState((currentState) => ({
         ...currentState,
         error: "Tell us how your last swimming set went before generating another one.",
+        successMessage: "",
       }));
       return;
     }
@@ -670,6 +677,7 @@ export default function App() {
       ...currentState,
       isGenerating: true,
       error: "",
+      successMessage: "",
     }));
 
     try {
@@ -678,12 +686,16 @@ export default function App() {
         ...currentState,
         isGenerating: false,
         recommendation: response?.recommendation ?? null,
+        successMessage: currentState.retryFeedback
+          ? "Your next suggestion now reflects the feedback you entered."
+          : "Your Bedrock swim suggestion is ready.",
       }));
     } catch (error) {
       setSwimmingState((currentState) => ({
         ...currentState,
         isGenerating: false,
         error: error instanceof Error ? error.message : "Unable to generate a swimming session right now.",
+        successMessage: "",
       }));
     }
   }
@@ -697,6 +709,7 @@ export default function App() {
       setSwimmingState((currentState) => ({
         ...currentState,
         error: "Tell us how your current planned swimming session went before saving another one.",
+        successMessage: "",
       }));
       return;
     }
@@ -705,6 +718,7 @@ export default function App() {
       ...currentState,
       isSaving: true,
       error: "",
+      successMessage: "",
     }));
 
     try {
@@ -716,12 +730,14 @@ export default function App() {
         recommendation: null,
         retryFeedback: "",
         shouldPromptPendingFeedback: false,
+        successMessage: "Swimming set saved. Your follow-up feedback will shape the next recommendation.",
       }));
     } catch (error) {
       setSwimmingState((currentState) => ({
         ...currentState,
         isSaving: false,
         error: error instanceof Error ? error.message : "Unable to save this swimming session.",
+        successMessage: "",
       }));
     }
   }
@@ -735,6 +751,7 @@ export default function App() {
       ...currentState,
       isSubmittingFeedback: true,
       error: "",
+      successMessage: "",
     }));
 
     try {
@@ -749,18 +766,20 @@ export default function App() {
         isSubmittingFeedback: false,
         followUpFeedback: "",
         shouldPromptPendingFeedback: false,
+        successMessage: "Feedback saved. Your next swim suggestion will take it into account.",
       }));
     } catch (error) {
       setSwimmingState((currentState) => ({
         ...currentState,
         isSubmittingFeedback: false,
         error: error instanceof Error ? error.message : "Unable to save your session feedback.",
+        successMessage: "",
       }));
     }
   }
 
   async function handleResetSwimming() {
-    const confirmed = window.confirm("Are you sure? This will reset your swimming questions and delete your saved swimming sessions.");
+    const confirmed = window.confirm("Are you sure? This will reset your swimming questions, delete your saved swimming sessions, and forget the feedback used for future swim suggestions.");
 
     if (!confirmed) {
       return;
@@ -770,6 +789,7 @@ export default function App() {
       ...currentState,
       isResetting: true,
       error: "",
+      successMessage: "",
     }));
 
     try {
@@ -790,6 +810,7 @@ export default function App() {
         ...currentState,
         isResetting: false,
         error: error instanceof Error ? error.message : "Unable to reset swimming right now.",
+        successMessage: "",
       }));
     }
   }
@@ -909,6 +930,7 @@ export default function App() {
             }))}
             placeholder="Add any notes about how it felt, what worked, or what was tough."
           />
+          <p className="status-banner is-muted">This feedback is saved with your session history so the next swim suggestion can improve.</p>
           <div className="question-actions">
             <button
               type="button"
@@ -997,6 +1019,7 @@ export default function App() {
                 }))}
                 placeholder="Add any notes about how it felt, what worked, or what was tough."
               />
+              <p className="status-banner is-muted">This feedback is saved with your session history so the next swim suggestion can improve.</p>
               <div className="question-actions">
                 <button
                   type="button"
@@ -1041,6 +1064,7 @@ export default function App() {
               }))}
               placeholder="Optional feedback for the next suggestion, for example: shorter main set, more technique, less freestyle."
             />
+            <p className="status-banner is-muted">This feedback only affects the next generated suggestion. Resetting Swimming forgets saved session feedback as well.</p>
 
             {swimmingState.recommendation ? (
               <div className="session-plan">
@@ -1137,6 +1161,10 @@ export default function App() {
 
           {swimmingState.error ? (
             <p className="status-banner is-error">{swimmingState.error}</p>
+          ) : null}
+
+          {swimmingState.successMessage ? (
+            <p className="status-banner is-success">{swimmingState.successMessage}</p>
           ) : null}
 
           <div className="reset-row">
