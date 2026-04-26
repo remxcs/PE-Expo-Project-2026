@@ -269,6 +269,27 @@ function deriveFeedbackSignals(priorSessions) {
   };
 }
 
+function buildStructuredCandidateSet(candidate) {
+  return {
+    id: candidate.id,
+    role: getSessionSetRole(candidate),
+    type: candidate.type,
+    reps: candidate.reps ?? null,
+    distance: candidate.distance ?? null,
+    distanceUnit: candidate.distance_unit ?? null,
+    totalDistance: candidate.total_distance,
+    intensity: candidate.intensity,
+    rest: candidate.rest,
+    timeTarget: candidate.time_target,
+    strokes: candidate.strokes,
+    equipment: candidate.equipment,
+    trainingFocus: candidate.training_focus,
+    trainingFocusCertainty: candidate.training_focus_certainty,
+    tags: candidate.tags,
+    source: candidate.source
+  };
+}
+
 function buildRecommendationRequest({ answerSummary, candidates, priorSessions, retryFeedback, previousValidationError, previousInvalidResponse }) {
   return {
     responseSchema: RECOMMENDATION_SCHEMA,
@@ -276,17 +297,7 @@ function buildRecommendationRequest({ answerSummary, candidates, priorSessions, 
     retryFeedback: sanitizePromptText(retryFeedback, MAX_RETRY_FEEDBACK_LENGTH),
     priorSessions,
     feedbackSignals: deriveFeedbackSignals(priorSessions),
-    candidateSets: candidates.map((candidate) => ({
-      id: candidate.id,
-      text: candidate.text,
-      type: candidate.type,
-      totalDistance: candidate.total_distance,
-      intensity: candidate.intensity,
-      trainingFocus: candidate.training_focus,
-      equipment: candidate.equipment,
-      strokes: candidate.strokes,
-      rest: candidate.rest
-    })),
+    candidateSets: candidates.map((candidate) => buildStructuredCandidateSet(candidate)),
     ...(previousValidationError ? { previousValidationError: sanitizePromptText(previousValidationError, 400) } : {}),
     ...(previousInvalidResponse ? { previousInvalidResponse: sanitizePromptText(previousInvalidResponse, 500) } : {})
   };
@@ -311,6 +322,8 @@ async function invokeBedrockRecommendation({ modelId, answerSummary, candidates,
     "Use retry feedback as the strongest immediate instruction for the next suggestion.",
     "Use prior completed and skipped sessions plus their feedback to improve future suggestions.",
     "Avoid repeating candidate set IDs that appear in negative or skipped feedback unless the retry feedback explicitly asks for them.",
+    "Use the structured candidate fields such as role, type, reps, distance, totalDistance, strokes, equipment, trainingFocus, intensity, rest, and timeTarget as the only source of truth for choosing set IDs.",
+    "Do not rely on any prose workout description to choose sets.",
     "Every swim session must include a warmup, at least one main-work block, and a cooldown.",
     "Treat shortlist entries with type 'preset' as warmup, shortlist entries with type 'cooldown' as cooldown, and entries with type 'main', 'kick', or 'pull' as main-work blocks.",
     "Choose 2 to 5 candidate set IDs only from the shortlist.",
@@ -482,6 +495,7 @@ async function buildSwimmingRecommendation({ modelId, swimmingAnswers, sessions,
 }
 
 module.exports = {
+  buildStructuredCandidateSet,
   buildRecommendationRequest,
   buildSwimmingRecommendation,
   deriveFeedbackSignals,

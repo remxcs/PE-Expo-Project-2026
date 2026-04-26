@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 
 const { buildStableSwimSetId } = require("./swim-library");
 const {
+  buildStructuredCandidateSet,
   buildRecommendationRequest,
   deriveFeedbackSignals,
   getSessionSetRole,
@@ -110,12 +111,19 @@ test("buildRecommendationRequest includes retry feedback and derived feedback si
         id: "swim-set-zeta",
         text: "10 x 100 free",
         type: "main",
+        reps: 10,
+        distance: 100,
+        distance_unit: "m",
         total_distance: 1000,
         intensity: "moderate",
+        time_target: null,
         training_focus: ["stamina"],
+        training_focus_certainty: { stamina: 0.8 },
         equipment: [],
         strokes: ["Freestyle"],
-        rest: "20s"
+        rest: "20s",
+        tags: [],
+        source: "example"
       }
     ]
   });
@@ -123,6 +131,51 @@ test("buildRecommendationRequest includes retry feedback and derived feedback si
   assert.equal(request.retryFeedback, "Shorter main set please");
   assert.deepEqual(request.feedbackSignals.avoidSetIds, ["swim-set-zeta"]);
   assert.equal(request.candidateSets[0].id, "swim-set-zeta");
+  assert.equal(request.candidateSets[0].role, "main");
+  assert.equal(request.candidateSets[0].reps, 10);
+  assert.equal(request.candidateSets[0].distance, 100);
+  assert.equal(request.candidateSets[0].distanceUnit, "m");
+  assert.ok(!("textSummary" in request.candidateSets[0]));
+});
+
+test("buildStructuredCandidateSet keeps only structured fields for Bedrock", () => {
+  const structured = buildStructuredCandidateSet({
+    id: "swim-set-1",
+    text: "4 x 50 backstroke drill",
+    type: "preset",
+    reps: 4,
+    distance: 50,
+    distance_unit: "m",
+    total_distance: 200,
+    time_target: null,
+    intensity: "easy",
+    rest: "15s",
+    strokes: ["Backstroke"],
+    equipment: ["Pull buoy"],
+    training_focus: ["technique"],
+    training_focus_certainty: { technique: 0.9 },
+    tags: ["drill"],
+    source: "example"
+  });
+
+  assert.deepEqual(structured, {
+    id: "swim-set-1",
+    role: "warmup",
+    type: "preset",
+    reps: 4,
+    distance: 50,
+    distanceUnit: "m",
+    totalDistance: 200,
+    intensity: "easy",
+    rest: "15s",
+    timeTarget: null,
+    strokes: ["Backstroke"],
+    equipment: ["Pull buoy"],
+    trainingFocus: ["technique"],
+    trainingFocusCertainty: { technique: 0.9 },
+    tags: ["drill"],
+    source: "example"
+  });
 });
 
 test("session role mapping treats preset as warmup and cooldown as cooldown", () => {
