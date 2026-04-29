@@ -67,6 +67,7 @@
 
 .hero-badge {
   padding: 0.55rem 0.9rem;
+  margin-bottom: var(--space-5);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.1);

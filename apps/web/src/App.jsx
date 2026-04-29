@@ -961,8 +961,8 @@ export default function App() {
               <p>Pick your sport, make a call, and keep the flow lightweight on mobile and desktop.</p>
             </article>
             <article className="feature-card">
-              <h2>Fresh design</h2>
-              <p>Bright colours, clean panels, and a modern layout designed for students and young athletes.</p>
+              <h2>Using Real Sets</h2>
+              <p>All the agents are trained using real sets and exercises, so you can improve quicker.</p>
             </article>
           </div>
         </section>
