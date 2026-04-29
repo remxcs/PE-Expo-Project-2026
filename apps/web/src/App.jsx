@@ -926,7 +926,7 @@ export default function App() {
         <section className="login-card">
           <div className="orb orb-one" />
           <div className="orb orb-two" />
-          <div className="hero-badge">Teen sports. One clean hub.</div>
+          <div className="hero-badge">PlayrPro</div>
           <p className="eyebrow">Sports Hub</p>
           <h1>Sign in to unlock your sports space.</h1>
           <p className="login-copy">

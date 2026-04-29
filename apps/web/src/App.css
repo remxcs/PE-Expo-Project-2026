@@ -90,7 +90,10 @@
   color: #f7f8ff;
 }
 
-.dashboard-header h1,
+.dashboard-header h1 {
+  color: rgba(247, 248, 255, 0.96);
+}
+
 .picker-header h2,
 .sport-card h2 {
   color: var(--color-text);
